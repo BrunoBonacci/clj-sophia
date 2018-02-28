@@ -3,6 +3,11 @@
            [com.sun.jna.ptr IntByReference]))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;               ---==| N A T I V E   I N T E R F A C E |==----               ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (gen-interface
    :name com.brunobonacci.sophia.jna.Sophia
@@ -69,6 +74,110 @@
   (com.sun.jna.Native/loadLibrary
    "sophia" com.brunobonacci.sophia.jna.Sophia))
 
+(defn sp-env []
+  (.sp_env jns))
+
+(defn sp-setstring [env key value]
+  (.sp_setstring jns env key value 0))
+
+(defn sp-getbytes [doc key]
+  (let [size (IntByReference.)
+        value* (.sp_getstring jns doc key size)]
+    (when value*
+      (.getByteArray value* (long 0) (.getValue size)))))
+
+(defn sp-getstring [doc key
+                    & {:keys [encoding]
+                       :or {encoding (System/getProperty "file.encoding" "utf8")}}]
+  (when-let [bytes (sp-getbytes doc key)]
+    (String. bytes encoding)))
+
+(defn sp-open [env]
+  (.sp_open jns env))
+
+(defn sp-document [db]
+  (.sp_document jns db))
+
+(defn sp-set [db doc]
+  (.sp_set jns db doc))
+
+(defn sp-get [db doc]
+  (.sp_get jns db doc))
+
+(defn sp-getobject [env key]
+  (.sp_getobject jns env key))
+
+(defn sp-destroy [ref]
+  (.sp_destroy jns ref))
+
+(defn sp-error [env]
+  (sp-getstring env "sophia.error"))
+
+
+(comment
+
+    ;; void* env = sp_env();
+  (def env (sp-env))
+
+
+  ;; sp_setstring(env, "sophia.path", "./storage", 0);
+  (sp-setstring env "sophia.path" "/tmp/sophia.db")
+
+  ;; sp_setstring(env, "db", "test", 0);
+  (sp-setstring env "db" "test")
+
+  ;; sp_open(env);
+  (sp-open env)
+
+
+  ;; void* db = sp_getobject(env, "db.test");
+  (def db (sp-getobject env "db.test"))
+
+  ;; /* do transactions */
+
+  ;; SET
+  ;; void* o = sp_document(db);
+  (def o (sp-document db))
+
+  ;; sp_setstring(o, "key", &key, sizeof(key));
+  ;; sp_setstring(o, "value", &key, sizeof(key));
+
+  (sp-setstring o "key" "firstname")
+  (sp-setstring o "value" "Bruno")
+
+  ;; rc = sp_set(db, o);
+  (sp-set db o)
+
+  ;;
+  ;; GET
+  ;;
+
+  ;; void* o = sp_document(db);
+  (def o (sp-document db))
+
+  (sp-setstring o "key" "firstname")
+
+  (def o (sp-get db o))
+
+  (when-not o
+    (println "not found"))
+
+  (sp-getstring o "key")
+  (sp-getstring o "value")
+  (sp-getstring o "dob")
+
+  ;; sp_destroy(o);
+  (sp-destroy o)
+
+
+  ;; sp_destroy(env);
+  (.sp_destroy jns env)
+
+
+
+  (sp-error env)
+
+  )
 
 
 (comment
@@ -100,7 +209,7 @@
   ;; sp_setstring(o, "value", &key, sizeof(key));
 
   (.sp_setstring jns o "key" "hello" 0)
-  (.sp_setstring jns o "value" "World!" 0)
+  (.sp_setstring jns o "value" "World!2" 0)
 
   ;; rc = sp_set(db, o);
   (.sp_set jns db o)
@@ -112,7 +221,7 @@
   ;; void* o = sp_document(db);
   (def o (.sp_document jns db))
 
-  (.sp_setstring jns o "key" "hello" 0)
+  (.sp_setstring jns o "key" "hello1" 0)
 
   (def o (.sp_get jns db o))
 
@@ -121,7 +230,7 @@
 
   (def size (IntByReference.))
 
-  (def v* (.sp_getstring jns o "key" size))
+  (def v* (.sp_getstring jns o "valued" size))
 
   (.getValue size)
 
@@ -138,7 +247,6 @@
 
   ;; sp_destroy(env);
   (.sp_destroy jns env)
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
