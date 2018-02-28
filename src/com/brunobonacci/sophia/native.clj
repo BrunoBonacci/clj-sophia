@@ -70,7 +70,7 @@
 
 
 
-(def jns ^com.brunobonacci.sophia.jna.Sophia
+(def ^com.brunobonacci.sophia.jna.Sophia jns
   (com.sun.jna.Native/loadLibrary
    "sophia" com.brunobonacci.sophia.jna.Sophia))
 
@@ -89,8 +89,8 @@
 (defn sp-getstring [doc key
                     & {:keys [encoding]
                        :or {encoding (System/getProperty "file.encoding" "utf8")}}]
-  (when-let [bytes (sp-getbytes doc key)]
-    (String. bytes encoding)))
+  (when-let [bytez (sp-getbytes doc key)]
+    (String. ^bytes bytez ^String encoding)))
 
 (defn sp-open [env]
   (.sp_open jns env))
