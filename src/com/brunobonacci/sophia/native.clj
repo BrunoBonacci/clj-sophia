@@ -601,6 +601,14 @@
   (sp_getstring env "sophia.error"))
 
 
+
+(defmacro op [env & body]
+  `(let [r# (do ~@body)]
+     (if (= r# -1)
+       (throw (ex-info (str "Database error: " (sp_lasterror ~env)) {}))
+       r#)))
+
+
 (comment
 
     ;; void* env = sp_env();
@@ -632,6 +640,9 @@
   (sp_setstring o "key" "firstname")
   (sp_setstring o "value" "Bruno")
 
+  (sp_setstring o "key"   "age")
+  (sp_setint o "value" 125)
+
   ;; rc = sp_set(db, o);
   (sp_set db o)
 
@@ -643,6 +654,8 @@
   (def o (sp_document db))
 
   (sp_setstring o "key" "firstname")
+
+  (sp_setstring o "key" "age")
 
   (def o (sp_get db o))
 
