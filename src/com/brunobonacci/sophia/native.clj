@@ -1,5 +1,5 @@
 (ns com.brunobonacci.sophia.native
-  (:import [com.sun.jna Library Native Platform Pointer]
+  (:import [com.sun.jna Library Native Platform Pointer Memory]
            [com.sun.jna.ptr IntByReference]))
 
 
@@ -10,63 +10,65 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (gen-interface
-   :name com.brunobonacci.sophia.jna.Sophia
-   :extends [com.sun.jna.Library]
-   :methods
-   [;; void* sp_env(void);
-    [sp_env       [] com.sun.jna.Pointer]
+ :name com.brunobonacci.sophia.jna.Sophia
+ :extends [com.sun.jna.Library]
+ :methods
+ [;; void* sp_env(void);
+  [sp_env       [] com.sun.jna.Pointer]
 
-    ;; void* sp_document(void* database);
-    ;;[sp_document  [com.sun.jna.Pointer] com.sun.jna.Pointer]
-    [sp_document  [com.sun.jna.Pointer] com.sun.jna.Pointer]
+  ;; void* sp_document(void* database);
+  ;;[sp_document  [com.sun.jna.Pointer] com.sun.jna.Pointer]
+  [sp_document  [com.sun.jna.Pointer] com.sun.jna.Pointer]
 
-    ;; int sp_setstring(void* object, const char *path, const void* ptr, int size);
-    [sp_setstring [com.sun.jna.Pointer String String int] int]
+  ;; int sp_setstring(void* object, const char *path, const void* ptr, int size);
+  ;;[sp_setstring [com.sun.jna.Pointer String String int] int]
+  ;;[sp_setstring [com.sun.jna.Pointer String bytes int] int]
+  [sp_setstring [com.sun.jna.Pointer String com.sun.jna.Pointer int] int]
 
-    ;; int sp_setint(void* object, const char *path, int64_t value);
-    [sp_setint    [com.sun.jna.Pointer String long] int]
+  ;; int sp_setint(void* object, const char *path, int64_t value);
+  [sp_setint    [com.sun.jna.Pointer String long] int]
 
-    ;; void* sp_getobject(void* object, const char *path);
-    [sp_getobject [com.sun.jna.Pointer String] com.sun.jna.Pointer]
+  ;; void* sp_getobject(void* object, const char *path);
+  [sp_getobject [com.sun.jna.Pointer String] com.sun.jna.Pointer]
 
-    ;; void* sp_getstring(void* object, const char *path, int *size);
-    [sp_getstring [com.sun.jna.Pointer String com.sun.jna.ptr.IntByReference] com.sun.jna.Pointer]
+  ;; void* sp_getstring(void* object, const char *path, int *size);
+  [sp_getstring [com.sun.jna.Pointer String com.sun.jna.ptr.IntByReference] com.sun.jna.Pointer]
 
-    ;; int64_t sp_getint(void* object, const char *path);
-    [sp_getint    [com.sun.jna.Pointer String] long]
+  ;; int64_t sp_getint(void* object, const char *path);
+  [sp_getint    [com.sun.jna.Pointer String] long]
 
-    ;; int sp_open(void* env);
-    ;; int sp_open(void* database);
-    [sp_open      [com.sun.jna.Pointer] int]
+  ;; int sp_open(void* env);
+  ;; int sp_open(void* database);
+  [sp_open      [com.sun.jna.Pointer] int]
 
-    ;; int sp_destroy(void* object);
-    [sp_destroy   [com.sun.jna.Pointer] int]
+  ;; int sp_destroy(void* object);
+  [sp_destroy   [com.sun.jna.Pointer] int]
 
-    ;; int sp_set(void* database, void* document);
-    ;; int sp_set(void* transaction, void* document);
-    [sp_set       [com.sun.jna.Pointer com.sun.jna.Pointer] int]
+  ;; int sp_set(void* database, void* document);
+  ;; int sp_set(void* transaction, void* document);
+  [sp_set       [com.sun.jna.Pointer com.sun.jna.Pointer] int]
 
-    ;; void* sp_upsert(void* database, void* document);
-    ;; void* sp_upsert(void* transaction, void* document);
-    [sp_upsert    [com.sun.jna.Pointer com.sun.jna.Pointer] com.sun.jna.Pointer]
+  ;; void* sp_upsert(void* database, void* document);
+  ;; void* sp_upsert(void* transaction, void* document);
+  [sp_upsert    [com.sun.jna.Pointer com.sun.jna.Pointer] com.sun.jna.Pointer]
 
-    ;; int sp_delete(void* database, void* document);
-    ;; int sp_delete(void* transaction, void* document);
-    [sp_delete    [com.sun.jna.Pointer com.sun.jna.Pointer] int]
+  ;; int sp_delete(void* database, void* document);
+  ;; int sp_delete(void* transaction, void* document);
+  [sp_delete    [com.sun.jna.Pointer com.sun.jna.Pointer] int]
 
-    ;; void* sp_get(void* database, void* document);
-    ;; void* sp_get(void* transaction, void* document);
-    [sp_get       [com.sun.jna.Pointer com.sun.jna.Pointer] com.sun.jna.Pointer]
+  ;; void* sp_get(void* database, void* document);
+  ;; void* sp_get(void* transaction, void* document);
+  [sp_get       [com.sun.jna.Pointer com.sun.jna.Pointer] com.sun.jna.Pointer]
 
-    ;; void* sp_cursor(void* env);
-    [sp_cursor    [com.sun.jna.Pointer] com.sun.jna.Pointer]
+  ;; void* sp_cursor(void* env);
+  [sp_cursor    [com.sun.jna.Pointer] com.sun.jna.Pointer]
 
-    ;; void* sp_begin(void* env);
-    [sp_begin     [com.sun.jna.Pointer] com.sun.jna.Pointer]
+  ;; void* sp_begin(void* env);
+  [sp_begin     [com.sun.jna.Pointer] com.sun.jna.Pointer]
 
-    ;; int sp_commit(void* transaction);
-    [sp_commit    [com.sun.jna.Pointer] int]
-    ])
+  ;; int sp_commit(void* transaction);
+  [sp_commit    [com.sun.jna.Pointer] int]
+  ])
 
 
 
@@ -79,6 +81,14 @@
 (defn- default-encoding
   []
   (System/getProperty "file.encoding" "utf8"))
+
+
+
+(defn bytes->void* [^bytes value]
+  (let [p (Memory. (count value))]
+    (.write p 0 value 0 (count value))
+    p))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -135,6 +145,42 @@
 
 
 
+(defn sp_setbytes
+  "sp_setstring, sp_getstring, sp_setint, sp_getint, sp_getobject - set
+  or get configuration options
+
+  DESCRIPTION:
+
+  For additional information take a look at the Configuration section.
+
+  RETURN VALUE:
+
+  On success, sp_setstring() returns 0. On error, it returns -1.
+
+  On success, sp_getstring() returns string pointer. On error or if
+  the variable is not set, it returns NULL.
+
+  All pointers returned by sp_getstring() must be freed using free(3)
+  function. Exception is sp_document() object and configuration cursor
+  document.
+
+  On success, sp_setint() returns 0. On error, it returns -1. On
+  success, sp_getint() returns a numeric value. On error, it returns
+  -1.
+
+  On success, sp_getobject() returns an object pointer. On error or if
+  the variable is not set, it returns NULL.
+
+  The database object returned by sp_getobject() increments its
+  reference counter, sp_destroy() can be used to decrement it. This
+  should be considered for online database close/drop cases.
+  "
+  [env key ^bytes value]
+  ;;(.sp_setstring jns env key value (count value))
+  (.sp_setstring jns env key (bytes->void* value) (count value)))
+
+
+
 (defn sp_setstring
   "sp_setstring, sp_getstring, sp_setint, sp_getint, sp_getobject - set
   or get configuration options
@@ -165,8 +211,10 @@
   reference counter, sp_destroy() can be used to decrement it. This
   should be considered for online database close/drop cases.
   "
-  [env key value]
-  (.sp_setstring jns env key value 0))
+  [env key ^String value
+   & {:keys [encoding]
+      :or {encoding (default-encoding)}}]
+  (sp_setbytes env key (.getBytes value encoding)))
 
 
 
@@ -598,7 +646,8 @@
 
 
 (defn sp_lasterror [env]
-  (sp_getstring env "sophia.error"))
+  (Native/toString
+   (sp_getstring env "sophia.error")))
 
 
 
@@ -611,7 +660,7 @@
 
 (comment
 
-    ;; void* env = sp_env();
+  ;; void* env = sp_env();
   (def env (sp_env))
 
 
@@ -638,10 +687,12 @@
   ;; sp_setstring(o, "value", &key, sizeof(key));
 
   (sp_setstring o "key" "firstname")
-  (sp_setstring o "value" "Bruno")
+  (sp_setstring o "value" "Joe")
 
-  (sp_setstring o "key"   "age")
-  (sp_setint o "value" 125)
+  ;; or
+
+  (sp_setbytes o "key" (byte-array [102  105  114  115  116  110  97  109  101]))
+  (sp_setbytes o "value" (byte-array [66  114  117  110  111]))
 
   ;; rc = sp_set(db, o);
   (sp_set db o)
@@ -653,9 +704,7 @@
   ;; void* o = sp_document(db);
   (def o (sp_document db))
 
-  (sp_setstring o "key" "firstname")
-
-  (sp_setstring o "key" "age")
+  (sp_setstring o "key"  "firstname")
 
   (def o (sp_get db o))
 
@@ -664,7 +713,6 @@
 
   (sp_getstring o "key")
   (sp_getstring o "value")
-  (sp_getstring o "dob")
 
   ;; sp_destroy(o);
   (sp_destroy o)
