@@ -11,4 +11,8 @@
                  [net.java.dev.jna/jna "4.5.1"]
                  [com.taoensso/nippy "2.14.0"]]
 
+  :profiles {:dev {:dependencies [[midje "1.9.1"]
+                                  [org.clojure/test.check "0.9.0"]]
+                   :plugins [[lein-midje "3.2.1"]]}}
+
   :jvm-opts ["-Djna.library.path=./lib/sophia"])
