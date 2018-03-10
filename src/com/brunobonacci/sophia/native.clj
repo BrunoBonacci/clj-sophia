@@ -658,6 +658,16 @@
        r#)))
 
 
+
+(defmacro destory-after
+  [v & body]
+  `(let [v# ~v]
+     (when v#
+       (let [r# (do ~@body)]
+         (sp_destroy v#)
+         r#))))
+
+
 (comment
 
   ;; void* env = sp_env();

@@ -19,6 +19,7 @@
             :db db}))
 
 
+
 (defn set-value!
   [{:keys [env] :as sophia} db key value]
   (if-let [db* (n/sp_getobject env (str "db." db))]
@@ -31,14 +32,27 @@
      (db-error sophia db "Database %s not found!" db))))
 
 
+
 (defn get-value
   [{:keys [env] :as sophia} db key]
   (if-let [db* (n/sp_getobject env (str "db." db))]
     (let [doc* (n/sp_document db*)
           _    (n/sp_setstring doc* "key" key)
-          v*   (n/op env (n/sp_get db* doc*))]
-      (when v*
+          v*   (n/sp_get db* doc*)]
+      (n/destory-after v*
         (nippy/thaw (n/sp_getbytes v* "value"))))
+    (throw
+     (db-error sophia db "Database %s not found!" db))))
+
+
+
+(defn delete-key!
+  [{:keys [env] :as sophia} db key]
+  (if-let [db* (n/sp_getobject env (str "db." db))]
+    (let [doc* (n/sp_document db*)
+          _    (n/sp_setstring doc* "key" key)
+          _    (n/op env (n/sp_delete db* doc*))]
+      :ok)
     (throw
      (db-error sophia db "Database %s not found!" db))))
 
@@ -52,9 +66,12 @@
 
   (set-value! sph "test" "name" "John")
 
-  (get-value  sph "test" "name")
+  (get-value   sph "test" "name")
 
-  (set-value! sph "test" "name" {:firstname "John" :lastname "Smith" :age 34})
+  (delete-key!  sph "test" "name")
+
+  (set-value! sph "test" "name"
+              {:firstname "John" :lastname "Smith" :age 34})
 
   (get-value  sph "test" "name")
 
