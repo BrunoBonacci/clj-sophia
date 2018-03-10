@@ -10,6 +10,7 @@
 
 (def num-tests
   (or
+   (println "TC_NUM_TESTS=" (or (System/getenv "TC_NUM_TESTS") 100))
    (Integer/getInteger "test-check.num-tests")
    (some-> (System/getenv "TC_NUM_TESTS") Integer/parseInt)
    100))
@@ -21,8 +22,19 @@
 
 
 
+;; workaround for https://dev.clojure.org/jira/browse/CLJ-2334
+(def any-non-NaN
+  "A recursive generator that will generate many different, often nested, values"
+  (gen/recursive-gen gen/container-type
+                     (gen/one-of [(gen/double* {:NaN? false})
+                                  gen/int gen/large-integer
+                                  gen/char gen/string gen/ratio
+                                  gen/boolean gen/keyword gen/keyword-ns gen/symbol
+                                  gen/symbol-ns gen/uuid])))
+
+
 (def any-value-gen
-  (gen/frequency [[99 gen/any] [1 (gen/return nil)]]))
+  (gen/frequency [[99 any-non-NaN] [1 (gen/return nil)]]))
 
 
 

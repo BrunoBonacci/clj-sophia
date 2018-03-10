@@ -58,15 +58,4 @@
 
   (get-value  sph "test" "name")
 
-
-  (.equals Double/NaN Double/NaN)
-  (= Double/NaN Double/NaN)
-
-  (.equals Double/NaN (/ 0.0 0.0))
-  (= Double/NaN (/ 0.0 0.0))
-  (/ 0.0 0.0)
-
-  (nippy/thaw (nippy/freeze [[Double/NaN]]))
-  (nippy/thaw (nippy/freeze {[] [[[{0 Double/NaN}]]]}))
-
-  )
+)
