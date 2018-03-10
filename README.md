@@ -1,24 +1,32 @@
 # clj-shopia
 
+**Work in progress**
+
 A Clojure driver for [Sophia DB](http://sophia.systems/).
 
 ### How does it differ from other storages?
 
-Sophia is RAM-Disk hybrid storage. It is designed to provide best possible on-disk performance without degradation
-in time. It has guaranteed *O(1)* worst case complexity for read, write and range scan operations.
+Sophia is RAM-Disk hybrid storage. It is designed to provide best
+possible on-disk performance without degradation in time. It has
+guaranteed *O(1)* worst case complexity for read, write and range scan
+operations.
 
-It adopts to expected write rate, total capacity and cache size. Memory requirements for common HDD and Flash
-drives can be seen [Here](http://sophia.systems/v2.2/admin/memory_requirements.html).
+It adopts to expected write rate, total capacity and cache
+size. Memory requirements for common HDD and Flash drives can be seen
+[Here](http://sophia.systems/v2.2/admin/memory_requirements.html).
 
 ### What is it good for?
 
-For server environment, which requires
-lowest latency access (both read and write), predictable behaviour, optimized storage schema and transaction guarantees.
+For server environment, which requires lowest latency access (both
+read and write), predictable behaviour, optimized storage schema and
+transaction guarantees.
 
-It can efficiently work with large volumes of ordered data, such as a time-series,
-analytics, events, logs, counters, metrics, full-text search, common key-value, etc.
+It can efficiently work with large volumes of ordered data, such as a
+time-series, analytics, events, logs, counters, metrics, full-text
+search, common key-value, etc.
 
-Bindings for the most common languages are available [here](http://sophia.systems/drivers.html).
+Bindings for the most common languages are available
+[here](http://sophia.systems/drivers.html).
 
 ### Features
 
