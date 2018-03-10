@@ -62,8 +62,8 @@ TODO:
 
 ## License
 
-clj-sophia (the driver) Copyright © 2018 Bruno Bonacci
+clj-sophia (the driver) Copyright © 2018 Bruno Bonacci <br/>
 Distributed under the Apache License v 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
-Sophia storage engine Copyright (C) Dmitry Simonenko (pmwkaa@gmail.com)
+Sophia storage engine Copyright (C) Dmitry Simonenko (pmwkaa@gmail.com) <br/>
 Distributed under BSD License (https://github.com/pmwkaa/sophia/blob/master/LICENSE)
