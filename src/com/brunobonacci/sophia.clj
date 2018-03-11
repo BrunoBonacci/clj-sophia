@@ -39,7 +39,7 @@
     (let [doc* (n/sp_document db*)
           _    (n/sp_setstring doc* "key" key)
           v*   (n/sp_get db* doc*)]
-      (n/destory-after v*
+      (n/with-ref v*
         (nippy/thaw (n/sp_getbytes v* "value"))))
     (throw
      (db-error sophia db "Database %s not found!" db))))

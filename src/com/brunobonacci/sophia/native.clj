@@ -659,16 +659,22 @@
 
 
 
-(defmacro destory-after
+(defmacro with-ref
+  "When `v` is not `nil` then body is executed and `v`
+  is destroyed (freed) after."
   [v & body]
   `(let [v# ~v]
      (when v#
-       (let [r# (do ~@body)]
-         (sp_destroy v#)
-         r#))))
+       (try
+         ~@body
+         (finally
+           (sp_destroy v#))))))
 
 
 (comment
+  ;;
+  ;; CRUD example from the website
+  ;;
 
   ;; void* env = sp_env();
   (def env (sp_env))
