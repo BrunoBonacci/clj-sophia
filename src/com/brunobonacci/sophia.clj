@@ -3,6 +3,7 @@
             [taoensso.nippy :as nippy]
             [clojure.string :as str]))
 
+
 (defn sophia
   [config]
   {:pre [(:sophia.path config) (:db config)]}
@@ -59,9 +60,35 @@
 
 
 
+(defprotocol ICursor
+  (sophia-env [_] "Sophia db configuration and environment")
+  (cursor-ref [_] "Internal cursor ref")
+  (close      [_] "to close the cursor when done"))
+
+
+
+(deftype Cursor [sophia cursor]
+
+  ICursor
+  (sophia-env [_] sophia)
+  (cursor-ref [_] @cursor)
+  (close [_] (when-let [ref* @cursor]
+               (when (compare-and-set! cursor ref* nil)
+                 (n/sp_destroy ref*)))))
+
+
+
+(defn cursor
+  [{:keys [env] :as sophia}]
+  (Cursor. sophia (atom (n/sp_cursor env))))
+
+
+
 (defn- -range-query
   [{:keys [doc cursor]}]
-  (let [doc*  (n/sp_get cursor doc)]
+  (let [cursor* (cursor-ref cursor)
+        _       (when-not cursor* (throw (ex-info "Cursor already closed." {})))
+        doc*    (n/sp_get cursor* doc)]
     (lazy-seq
      (when doc*
        (let [key   (n/sp_getstring doc* "key")
@@ -72,16 +99,16 @@
 
 
 (defn range-query
-  [{:keys [env] :as sophia} db
+  [^Cursor cursor db
    & {:keys [key order search-type] :as opts
       :or {order :asc
            search-type :index-scan-inclusive}}]
-  {:pre [(#{:asc :desc} order)
+  {:pre [(not (nil? cursor))
+         (#{:asc :desc} order)
          (#{:prefix :index-scan-inclusive
             :index-scan-exclusive} search-type)]}
-  (if-let [db*  (n/sp_getobject env (str "db." db))]
+  (if-let [db*  (n/sp_getobject (:env (sophia-env cursor)) (str "db." db))]
     (let [doc*  (n/sp_document db*)
-          cur*  (n/sp_cursor env)
           order (if (= :desc order) "<=" ">=")
           order (if (= :index-scan-exclusive search-type)
                   (str/replace order #"=" "")
@@ -95,7 +122,7 @@
         key
         (n/sp_setstring doc* "key" key))
 
-      (-range-query {:doc doc* :cursor cur*}))
+      (-range-query {:doc doc* :cursor cursor}))
     (throw
      (db-error sophia db "Database %s not found!" db))))
 
@@ -104,10 +131,16 @@
 (comment
 
   (def sph
-    (sophia {:sophia.path "/tmp/test3"
+    (sophia {:sophia.path "/tmp/sophia-test"
              :db "test"}))
 
-  (range-query sph "test" )
+  (with-open [cur (cursor sph)]
+    (run! prn
+          (range-query cur "test")))
+
+  (with-open [cur (cursor sph)]
+    (doall (range-query cur "test")))
+
 
   (set-value! sph "test" "name" "John")
 

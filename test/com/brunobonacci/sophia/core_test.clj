@@ -29,6 +29,7 @@
 (defn rand-db [name]
   (db/sophia {:sophia.path (rand-db-name name) :db name}))
 
+
 (def sequecen-data
   (->>
    (for [x (range 3)
@@ -40,6 +41,13 @@
 (defn load-seqence-data [sophia db]
   (doseq [[k v] sequecen-data]
     (db/set-value! sophia db k v)))
+
+
+(defmacro test-range-query
+  [sophia db & opts]
+  `(with-open [cursor# (db/cursor ~sophia)]
+     (doall (db/range-query cursor# ~db ~@opts))))
+
 
 ;; workaround for https://dev.clojure.org/jira/browse/CLJ-2334
 (def any-non-NaN
@@ -75,12 +83,26 @@
    (:result test) => true))
 
 
+
 (facts "range-query - on  empty db"
 
        (let [sophia (rand-db "test")]
 
-         (db/range-query sophia "test") => []
-         ))
+         (test-range-query sophia "test")) => []
+         )
+
+
+
+(facts "range-query - cursor closed"
+
+       (let [sophia (rand-db "test")
+             _ (load-seqence-data sophia "test")]
+
+         (count
+          (with-open [cursor (db/cursor sophia)]
+            (db/range-query cursor "test"))))
+       => (throws #"Cursor already closed.")
+       )
 
 
 
@@ -89,8 +111,9 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test") => sequecen-data
-        ))
+         (test-range-query sophia "test"))  => sequecen-data
+       )
+
 
 
 
@@ -99,9 +122,9 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test"  :order :desc)
-         => (reverse sequecen-data)
-         ))
+         (test-range-query sophia "test"  :order :desc))
+       => (reverse sequecen-data)
+         )
 
 
 
@@ -110,9 +133,9 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "1" :search-type :prefix)
-         => (->> sequecen-data (filter #(str/starts-with? (first %) "1")))
-         ))
+         (test-range-query sophia "test" :key "1" :search-type :prefix))
+       => (->> sequecen-data (filter #(str/starts-with? (first %) "1")))
+         )
 
 
 
@@ -121,9 +144,9 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "ABC" :search-type :prefix)
-         => []
-         ))
+         (test-range-query sophia "test" :key "ABC" :search-type :prefix))
+       => []
+         )
 
 
 
@@ -132,10 +155,10 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "1" :search-type :prefix
-                         :order :desc)
-         => (->> sequecen-data (filter #(str/starts-with? (first %) "1")))
-         ))
+         (test-range-query sophia "test" :key "1" :search-type :prefix
+                         :order :desc))
+       => (->> sequecen-data (filter #(str/starts-with? (first %) "1")))
+         )
 
 
 
@@ -144,10 +167,10 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "1"
-                         :search-type :index-scan-inclusive)
-         => (->> sequecen-data (drop 10))
-         ))
+         (test-range-query sophia "test" :key "1"
+                         :search-type :index-scan-inclusive))
+       => (->> sequecen-data (drop 10))
+         )
 
 
 
@@ -156,10 +179,10 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "1000"
-                         :search-type :index-scan-inclusive)
-         => (->> sequecen-data (drop 10))
-         ))
+         (test-range-query sophia "test" :key "1000"
+                         :search-type :index-scan-inclusive))
+       => (->> sequecen-data (drop 10))
+         )
 
 
 
@@ -168,10 +191,10 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "1000"
-                         :search-type :index-scan-exclusive)
-         => (->> sequecen-data (drop 11))
-         ))
+         (test-range-query sophia "test" :key "1000"
+                         :search-type :index-scan-exclusive))
+       => (->> sequecen-data (drop 11))
+         )
 
 
 
@@ -180,10 +203,10 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "ABC"
-                         :search-type :index-scan-inclusive)
-         => []
-         ))
+         (test-range-query sophia "test" :key "ABC"
+                         :search-type :index-scan-inclusive))
+       => []
+         )
 
 
 
@@ -192,11 +215,11 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "1"
+         (test-range-query sophia "test" :key "1"
                          :search-type :index-scan-inclusive
-                         :order :desc)
-         => (->> sequecen-data (take 10) reverse)
-         ))
+                         :order :desc))
+       => (->> sequecen-data (take 10) reverse)
+         )
 
 
 
@@ -205,11 +228,11 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "1000"
+         (test-range-query sophia "test" :key "1000"
                          :search-type :index-scan-inclusive
-                         :order :desc)
-         => (->> sequecen-data (take 11) reverse)
-         ))
+                         :order :desc))
+       => (->> sequecen-data (take 11) reverse)
+         )
 
 
 
@@ -218,8 +241,8 @@
        (let [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
-         (db/range-query sophia "test" :key "1000"
+         (test-range-query sophia "test" :key "1000"
                          :search-type :index-scan-exclusive
-                         :order :desc)
-         => (->> sequecen-data (take 10) reverse)
-         ))
+                         :order :desc))
+       => (->> sequecen-data (take 10) reverse)
+         )
