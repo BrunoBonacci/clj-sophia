@@ -75,6 +75,14 @@
    (:result test) => true))
 
 
+(facts "range-query - on  empty db"
+
+       (let [sophia (rand-db "test")]
+
+         (db/range-query sophia "test") => []
+         ))
+
+
 
 (facts "range-query - full index scan"
 
@@ -105,6 +113,18 @@
          (db/range-query sophia "test" :key "1" :search-type :prefix)
          => (->> sequecen-data (filter #(str/starts-with? (first %) "1")))
          ))
+
+
+
+(facts "range-query - non matching prefix"
+
+       (let [sophia (rand-db "test")
+             _ (load-seqence-data sophia "test")]
+
+         (db/range-query sophia "test" :key "ABC" :search-type :prefix)
+         => []
+         ))
+
 
 
 (facts "range-query - prefix - descending order not working with prefix"
@@ -151,6 +171,18 @@
          (db/range-query sophia "test" :key "1000"
                          :search-type :index-scan-exclusive)
          => (->> sequecen-data (drop 11))
+         ))
+
+
+
+(facts "range-query - index scan not matching"
+
+       (let [sophia (rand-db "test")
+             _ (load-seqence-data sophia "test")]
+
+         (db/range-query sophia "test" :key "ABC"
+                         :search-type :index-scan-inclusive)
+         => []
          ))
 
 

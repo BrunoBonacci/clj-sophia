@@ -62,10 +62,10 @@
 (defn- -range-query
   [{:keys [doc cursor]}]
   (let [doc*  (n/sp_get cursor doc)]
-    (when doc*
-      (let [key   (n/sp_getstring doc* "key")
-            value (nippy/thaw (n/sp_getbytes doc* "value"))]
-        (lazy-seq
+    (lazy-seq
+     (when doc*
+       (let [key   (n/sp_getstring doc* "key")
+             value (nippy/thaw (n/sp_getbytes doc* "value"))]
          (cons [key value]
                (-range-query {:doc doc* :cursor cursor})))))))
 
@@ -107,9 +107,7 @@
     (sophia {:sophia.path "/tmp/test3"
              :db "test"}))
 
-  (range-query sph "test" :order :asc
-               :key "test-05"
-               :search-type :index-scan-inclusive)
+  (range-query sph "test" )
 
   (set-value! sph "test" "name" "John")
 
