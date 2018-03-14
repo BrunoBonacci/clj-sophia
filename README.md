@@ -25,9 +25,6 @@ It can efficiently work with large volumes of ordered data, such as a
 time-series, analytics, events, logs, counters, metrics, full-text
 search, common key-value, etc.
 
-Bindings for the most common languages are available
-[here](http://sophia.systems/drivers.html).
-
 ### Features
 
 * Full ACID compliancy
@@ -54,7 +51,7 @@ Bindings for the most common languages are available
 * Simple and easy to use (minimalistic API, FFI-friendly, amalgamated)
 * Implemented as small *C-written* library with zero dependencies
 * Carefully tested
-* Open Source Software, BSD
+* Open Source Software, BSD (*the storage engine*) and Apache v2.0 (*this driver*)
 
 ## Usage
 

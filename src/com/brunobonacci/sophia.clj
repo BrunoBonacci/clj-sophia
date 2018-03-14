@@ -4,6 +4,14 @@
             [clojure.string :as str]))
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;             ----==| U T I L I T Y   F U N C T I O N S |==----              ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 (defn- uuid []
   (str (java.util.UUID/randomUUID)))
 
@@ -15,8 +23,18 @@
             :db db}))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;                  ----==| T R A N S A C T I O N S |==----                   ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(let [env-refs (atom {})]
+
+
+(let [;; Hide native references away to avoid
+      ;; misuse and potential JVM crashes.
+      env-refs (atom {})
+      trx-refs (atom {})]
 
   (defn- env* [id]
     (get @env-refs id))
@@ -31,17 +49,53 @@
       (n/op env (n/sp_open env))
       (swap! env-refs assoc envid env)
       {:env envid
-       :config config})))
+       :config config}))
+
+  (defn- trx* [id]
+    (or (get @trx-refs id)
+       (throw (ex-info "Transaction already terminated." {:trx id}))))
+
+  (defn begin-transaction
+    [{:keys [env] :as sophia}]
+    (let [trx*  (n/sp_begin (env* env))
+          trxid (uuid)]
+      (swap! trx-refs assoc trxid trx*)
+      {:trx trxid :env env :sophia sophia}))
+
+
+  (defn commit
+    [{:keys [trx] :as transaction}]
+    (let [refs @trx-refs
+          ref* (get refs trx)]
+      (if (and ref* (compare-and-set! trx-refs refs (dissoc refs trx)))
+        (n/sp_commit ref*)
+        (throw (ex-info "Transaction already terminated." transaction)))))
+
+
+  (defn rollback
+    [{:keys [trx] :as transaction}]
+    (let [refs @trx-refs
+          ref* (get refs trx)]
+      (if (and ref* (compare-and-set! trx-refs refs (dissoc refs trx)))
+        (do (n/sp_destroy ref*) nil)
+        (throw (ex-info "Transaction already terminated." transaction))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;            ----==| G E T   /   S E T   /   D E L E T E |==----             ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
 (defn set-value!
-  [{:keys [env] :as sophia} db key value]
+  [{:keys [env trx] :as sophia} db key value]
   (if-let [db* (n/sp_getobject (env* env) (str "db." db))]
     (let [doc* (n/sp_document db*)]
       (n/sp_setstring doc* "key" key)
       (n/sp_setbytes  doc* "value" (nippy/freeze value))
-      (n/op (env* env) (n/sp_set db* doc*))
+      (n/op (env* env) (n/sp_set (if trx (trx* trx) db*) doc*))
       :ok)
     (throw
      (db-error sophia db "Database %s not found!" db))))
@@ -49,11 +103,11 @@
 
 
 (defn get-value
-  [{:keys [env] :as sophia} db key]
+  [{:keys [env trx] :as sophia} db key]
   (if-let [db* (n/sp_getobject (env* env) (str "db." db))]
     (let [doc* (n/sp_document db*)
           _    (n/sp_setstring doc* "key" key)
-          v*   (n/sp_get db* doc*)]
+          v*   (n/sp_get (if trx (trx* trx) db*) doc*)]
       (n/with-ref v*
         (nippy/thaw (n/sp_getbytes v* "value"))))
     (throw
@@ -62,16 +116,23 @@
 
 
 (defn delete-key!
-  [{:keys [env] :as sophia} db key]
+  [{:keys [env trx] :as sophia} db key]
   (if-let [db* (n/sp_getobject (env* env) (str "db." db))]
     (let [doc* (n/sp_document db*)
           _    (n/sp_setstring doc* "key" key)
-          _    (n/op (env* env) (n/sp_delete db* doc*))]
+          _    (n/op (env* env) (n/sp_delete (if trx (trx* trx) db*) doc*))]
       :ok)
     (throw
      (db-error sophia db "Database %s not found!" db))))
 
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;      ----==| C U R S O R   A N D   R A N G E   Q U E R I E S |==----       ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defprotocol ICursor
   (sophia-env [_] "Sophia db configuration and environment")
@@ -99,7 +160,7 @@
 
 
 
-(defn- -range-query
+(defn- range-query-iterate
   [{:keys [doc cursor]}]
   (let [cursor* (cursor-ref cursor)
         _       (when-not cursor* (throw (ex-info "Cursor already closed." {})))
@@ -109,7 +170,7 @@
        (let [key   (n/sp_getstring doc* "key")
              value (nippy/thaw (n/sp_getbytes doc* "value"))]
          (cons [key value]
-               (-range-query {:doc doc* :cursor cursor})))))))
+               (range-query-iterate {:doc doc* :cursor cursor})))))))
 
 
 
@@ -137,9 +198,15 @@
         key
         (n/sp_setstring doc* "key" key))
 
-      (-range-query {:doc doc* :cursor cursor}))
+      (range-query-iterate {:doc doc* :cursor cursor}))
     (throw
      (db-error sophia db "Database %s not found!" db))))
+
+
+
+
+
+
 
 
 
@@ -148,6 +215,10 @@
   (def sph
     (sophia {:sophia.path "/tmp/sophia-test"
              :db "test"}))
+
+  (def tx (begin-transaction sph))
+
+  (trx* (:trx tx))
 
   (with-open [cur (cursor sph)]
     (run! prn
@@ -163,11 +234,13 @@
 
   (delete-key!  sph "test" "name")
 
-  (set-value! sph "test" "name"
+  (set-value! tx "test" "name"
               {:firstname "John" :lastname "Smith" :age 34})
 
   (get-value  sph "test" "name")
+  (get-value  tx "test" "name")
 
+  (commit tx)
 
   (doseq [k (take 1000 (repeatedly #(str "test-" (uuid))))]
     (set-value! sph "test" k {:value (uuid) :id (uuid)}))

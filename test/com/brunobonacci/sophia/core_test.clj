@@ -5,29 +5,62 @@
             [clojure.test.check.properties :as prop]
             [midje.sweet :refer :all]
             [com.brunobonacci.sophia :as db]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.java.io :as io]))
 
 
 
-(def num-tests
-  (or
-   (println "TC_NUM_TESTS=" (or (System/getenv "TC_NUM_TESTS") 100))
-   (Integer/getInteger "test-check.num-tests")
-   (some-> (System/getenv "TC_NUM_TESTS") Integer/parseInt)
-   100))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;                     ----==| U T I L I T I E S |==----                      ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defn uuid []
   (str (java.util.UUID/randomUUID)))
 
 
+
 (defn rand-db-name [name]
   (str "/tmp/sophia-" name "-" (uuid)))
 
 
+
 (defn rand-db [name]
   (db/sophia {:sophia.path (rand-db-name name) :db name}))
+
+
+
+(defn rm-fr
+  [f & {:keys [force] :or {force true}}]
+  (let [^java.io.File f (io/file f)]
+    (if (.isDirectory f)
+      (run! #(rm-fr % :force force) (.listFiles f)))
+    (io/delete-file f force)))
+
+
+
+(defmacro with-test-database
+  "bindings => [name init ...]
+  Evaluates body in a try expression with names bound to the values
+  of the inits, and a finally clause that calls (.close name) on each
+  name in reverse order."
+  [bindings & body]
+  (assert (vector? bindings) "a vector for its binding")
+  (assert (even? (count bindings)) "an even number of forms in binding vector")
+  (cond
+    (= (count bindings) 0) `(do ~@body)
+    (symbol? (bindings 0)) `(let ~(subvec bindings 0 2)
+                              (try
+                                (with-test-database ~(subvec bindings 2) ~@body)
+                                (finally
+                                  (when-let [path# (-> ~(bindings 0) :config :sophia.path)]
+                                    (rm-fr path#)))))
+    :else (throw (IllegalArgumentException.
+                  "with-test-database only allows Symbols in bindings"))))
+
 
 
 (def sequecen-data
@@ -38,15 +71,34 @@
    (map (juxt identity identity))))
 
 
+
 (defn load-seqence-data [sophia db]
   (doseq [[k v] sequecen-data]
     (db/set-value! sophia db k v)))
+
 
 
 (defmacro test-range-query
   [sophia db & opts]
   `(with-open [cursor# (db/cursor ~sophia)]
      (doall (db/range-query cursor# ~db ~@opts))))
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;                    ----==| T E S T . C H E C K |==----                     ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(def num-tests
+  (or
+   (println "TC_NUM_TESTS=" (or (System/getenv "TC_NUM_TESTS") 100))
+   (Integer/getInteger "test-check.num-tests")
+   (some-> (System/getenv "TC_NUM_TESTS") Integer/parseInt)
+   100))
 
 
 ;; workaround for https://dev.clojure.org/jira/browse/CLJ-2334
@@ -65,28 +117,36 @@
 
 
 
-(let [sophia (rand-db "test")
-      test
-      (tc/quick-check
-       num-tests
-       (prop/for-all
-        [key   (gen/not-empty gen/string-ascii)
-         value any-value-gen]
+(with-test-database [sophia (rand-db "test")]
+  (let [test
+        (tc/quick-check
+         num-tests
+         (prop/for-all
+          [key   (gen/not-empty gen/string-ascii)
+           value any-value-gen]
 
-        ;;(println (format "Testing SET/GET '%s' -> '%s'" key value))
-        ;; set the key
-        (db/set-value! sophia "test" key value)
-        ;; get the value and check the result
-        (= value (db/get-value sophia "test" key))))]
-  (pprint test)
-  (fact "set then get symmetry"
-   (:result test) => true))
+          ;;(println (format "Testing SET/GET '%s' -> '%s'" key value))
+          ;; set the key
+          (db/set-value! sophia "test" key value)
+          ;; get the value and check the result
+          (= value (db/get-value sophia "test" key))))]
+    (pprint test)
+    (fact "set then get symmetry"
+          (:result test) => true)))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;                   ----==| R A N G E - Q U E R Y |==----                    ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
 (facts "range-query - on  empty db"
 
-       (let [sophia (rand-db "test")]
+       (with-test-database [sophia (rand-db "test")]
 
          (test-range-query sophia "test")) => []
          )
@@ -95,7 +155,7 @@
 
 (facts "range-query - cursor closed"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (count
@@ -108,7 +168,7 @@
 
 (facts "range-query - full index scan"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test"))  => sequecen-data
@@ -119,7 +179,7 @@
 
 (facts "range-query - full index scan - descending order"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test"  :order :desc))
@@ -130,7 +190,7 @@
 
 (facts "range-query - prefix"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "1" :search-type :prefix))
@@ -141,7 +201,7 @@
 
 (facts "range-query - non matching prefix"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "ABC" :search-type :prefix))
@@ -152,7 +212,7 @@
 
 (facts "range-query - prefix - descending order not working with prefix"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "1" :search-type :prefix
@@ -164,7 +224,7 @@
 
 (facts "range-query - index scan prefix"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "1"
@@ -176,7 +236,7 @@
 
 (facts "range-query - index scan inclusive"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "1000"
@@ -188,7 +248,7 @@
 
 (facts "range-query - index scan exclusive"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "1000"
@@ -200,7 +260,7 @@
 
 (facts "range-query - index scan not matching"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "ABC"
@@ -212,7 +272,7 @@
 
 (facts "range-query - index scan prefix - descending order"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "1"
@@ -225,7 +285,7 @@
 
 (facts "range-query - index scan inclusive - descending order"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "1000"
@@ -238,7 +298,7 @@
 
 (facts "range-query - index scan exclusive - descending order"
 
-       (let [sophia (rand-db "test")
+       (with-test-database [sophia (rand-db "test")
              _ (load-seqence-data sophia "test")]
 
          (test-range-query sophia "test" :key "1000"
