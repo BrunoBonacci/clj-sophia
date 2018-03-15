@@ -31,13 +31,50 @@
 
 
 
+(defn- commit-result
+  [trxid silent result]
+  (if-not silent
+    (case result
+      :ok :ok
+      :rollback (throw
+                 (ex-info
+                  (format
+                   (str "The transaction %s has been rolled back"
+                        " because if a concurrent modification.") trxid)
+                  {:trx trxid :result result}))
+      :lock (throw
+             (ex-info
+              (format
+               (str "The transaction %s has been rolled back"
+                    " because another transaction is locking "
+                    "the one key.") trxid)
+              {:trx trxid :result result})))
+    result))
+
+
+
+
 (let [;; Hide native references away to avoid
       ;; misuse and potential JVM crashes.
       env-refs (atom {})
       trx-refs (atom {})]
 
+  ;;
+  ;; ACCESSORS
+  ;;
   (defn- env* [id]
-    (get @env-refs id))
+    (or (get @env-refs id)
+       (throw (ex-info "Environment not found or terminated." {:env id}))))
+
+
+  (defn- trx* [id]
+    (or (get @trx-refs id)
+       (throw (ex-info "Transaction already terminated." {:trx id}))))
+
+
+  ;;
+  ;; PUBLIC API
+  ;;
 
   (defn sophia
     [config]
@@ -51,9 +88,7 @@
       {:env envid
        :config config}))
 
-  (defn- trx* [id]
-    (or (get @trx-refs id)
-       (throw (ex-info "Transaction already terminated." {:trx id}))))
+
 
   (defn begin-transaction
     [{:keys [env] :as sophia}]
@@ -63,13 +98,20 @@
       {:trx trxid :env env :sophia sophia}))
 
 
+
   (defn commit
-    [{:keys [trx] :as transaction}]
+    [{:keys [env trx] :as transaction} & {:keys [silent]}]
     (let [refs @trx-refs
           ref* (get refs trx)]
       (if (and ref* (compare-and-set! trx-refs refs (dissoc refs trx)))
-        (n/sp_commit ref*)
+        (commit-result
+         trx silent
+         (case (n/op (env* env) (n/sp_commit ref*))
+           0 :ok
+           1 :rollback
+           2 :lock))
         (throw (ex-info "Transaction already terminated." transaction)))))
+
 
 
   (defn rollback
@@ -79,6 +121,32 @@
       (if (and ref* (compare-and-set! trx-refs refs (dissoc refs trx)))
         (do (n/sp_destroy ref*) nil)
         (throw (ex-info "Transaction already terminated." transaction))))))
+
+
+
+(defmacro with-transaction
+  "bindings => [name init ...]
+  Evaluates body in a transaction. At the end of the block
+  the transaction is committed. If an exception occur before
+  the transaction is rolled back."
+  [bindings & body]
+  (assert (vector? bindings) "a vector for its binding")
+  (assert (even? (count bindings)) "an even number of forms in binding vector")
+  (cond
+    (= (count bindings) 0) `(do ~@body)
+    (symbol? (bindings 0)) `(let ~(subvec bindings 0 2)
+                              (try
+                                (let [res#
+                                      (with-transaction ~(subvec bindings 2) ~@body)]
+                                  ;; commit transaction
+                                  (commit ~(bindings 0))
+                                  ;; return last value
+                                  res#)
+                                (catch Throwable x#
+                                    (rollback ~(bindings 0))
+                                    (throw x#))))
+    :else (throw (IllegalArgumentException.
+                  "with-transaction only allows Symbols in bindings"))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -133,6 +201,8 @@
 ;;      ----==| C U R S O R   A N D   R A N G E   Q U E R I E S |==----       ;;
 ;;                                                                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 
 (defprotocol ICursor
   (sophia-env [_] "Sophia db configuration and environment")
@@ -205,20 +275,12 @@
 
 
 
-
-
-
-
-
 (comment
 
   (def sph
     (sophia {:sophia.path "/tmp/sophia-test"
              :db "test"}))
 
-  (def tx (begin-transaction sph))
-
-  (trx* (:trx tx))
 
   (with-open [cur (cursor sph)]
     (run! prn
@@ -227,6 +289,9 @@
   (with-open [cur (cursor sph)]
     (doall (range-query cur "test")))
 
+  (def tx (begin-transaction sph))
+
+  (trx* (:trx tx))
 
   (set-value! sph "test" "name" "John")
 
@@ -242,7 +307,15 @@
 
   (commit tx)
 
+  (with-transaction [tx (begin-transaction sph)]
+    (let [age (-> (get-value tx "test" "name") :age)]
+         (set-value! tx "test" "name"
+                     {:firstname "John" :lastname "Smith" :age (inc age)})
+         (get-value  tx "test" "name")))
+
+
   (doseq [k (take 1000 (repeatedly #(str "test-" (uuid))))]
     (set-value! sph "test" k {:value (uuid) :id (uuid)}))
 
-)
+
+  )
