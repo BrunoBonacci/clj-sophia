@@ -158,7 +158,7 @@
           user2 (sph/get-value tx "accounts" to)]
       (when-not (>= (:balance user1) amount)
         (throw (ex-info (str "Insufficient funds in available from: " from)
-                        {:from user1 :amount 200.0 :to user2})))
+                        {:from user1 :amount amount :to user2})))
       (sph/set-value! tx "accounts" "user1" (update user1 :balance - amount ))
       (sph/set-value! tx "accounts" "user2" (update user2 :balance + amount )))))
 ;;=> :ok

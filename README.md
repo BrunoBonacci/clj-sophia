@@ -288,7 +288,7 @@ example of multi-key transaction.
       ;; if funds are not available abort the transaction
       (when-not (>= (:balance user1) amount)
         (throw (ex-info (str "Insufficient funds in available from: " from)
-                        {:from user1 :amount 200.0 :to user2})))
+                        {:from user1 :amount amount :to user2})))
       ;; these two update are inside a transaction and they will be stored
       ;; atomically
       (sph/set-value! tx "accounts" "user1" (update user1 :balance - amount ))
