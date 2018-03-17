@@ -164,7 +164,7 @@
       (n/sp_setstring doc* "key" key)
       (n/sp_setbytes  doc* "value" (nippy/freeze value))
       (n/op (env* env) (n/sp_set (if trx (trx* trx) db*) doc*))
-      :ok)
+      value)
     (throw
      (db-error sophia db "Database %s not found!" db))))
 
@@ -189,7 +189,7 @@
     (let [doc* (n/sp_document db*)
           _    (n/sp_setstring doc* "key" key)
           _    (n/op (env* env) (n/sp_delete (if trx (trx* trx) db*) doc*))]
-      :ok)
+      nil)
     (throw
      (db-error sophia db "Database %s not found!" db))))
 

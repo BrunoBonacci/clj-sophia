@@ -16,7 +16,7 @@
 
 ;; set a simple value
 (sph/set-value!  env "accounts" "user1" "John")
-;;=> :ok
+;;=> "John"
 
 ;; get the value back
 (sph/get-value   env "accounts" "user1")
@@ -24,7 +24,7 @@
 
 ;; delete a key
 (sph/delete-key! env "accounts" "user1")
-;;=> :ok
+;;=> nil
 
 ;; now the key isn't present
 (sph/get-value   env "accounts" "user1")
@@ -33,7 +33,7 @@
 ;; set a complex value
 (sph/set-value! env "accounts" "user1"
                 {:firstname "John" :lastname "Doe" :age 34 :balance 100.0})
-;;=> :ok
+;;=> {:firstname "John" :lastname "Doe" :age 34 :balance 100.0}
 
 ;; get it back
 (sph/get-value   env "accounts" "user1")
@@ -41,11 +41,11 @@
 
 (sph/set-value! env "accounts" "user2"
                 {:firstname "Jane" :lastname "Smith" :age 28 :balance 200.0})
-;;=> :ok
+;;=> :{:firstname "Jane" :lastname "Smith" :age 28 :balance 200.0}
 
 (sph/set-value! env "accounts" "admin1"
                 {:firstname "Robert" :lastname "Green" :age 32 :grants [:accounts/admin]})
-;;=> :ok
+;;=> {:firstname "Robert" :lastname "Green" :age 32 :grants [:accounts/admin]}
 
 
 
@@ -140,7 +140,7 @@
 (sph/with-transaction [tx (sph/begin-transaction env)]
   (let [user1 (sph/get-value tx "accounts" "user1")]
     (sph/set-value! tx "accounts" "user1" (update user1 :balance + 150.0))))
-;;=> :ok
+;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 250.0}
 
 (sph/get-value env "accounts" "user1")
 ;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 250.0}
@@ -161,7 +161,7 @@
                         {:from user1 :amount amount :to user2})))
       (sph/set-value! tx "accounts" "user1" (update user1 :balance - amount ))
       (sph/set-value! tx "accounts" "user2" (update user2 :balance + amount )))))
-;;=> :ok
+;;=> {:firstname "Jane", :lastname "Smith", :age 28, :balance 400.0}
 
 (sph/get-value env "accounts" "user2")
 ;;=> {:firstname "Jane", :lastname "Smith", :age 28, :balance 400.0}

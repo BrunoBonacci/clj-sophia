@@ -1,7 +1,5 @@
 # clj-shopia
 
-**Work in progress**
-
 A Clojure driver for [Sophia DB](http://sophia.systems/).
 
 ### How does it differ from other storages?
@@ -89,7 +87,7 @@ Now you can **get**/**set**/**delete** values with:
 ``` clojure
 ;; set a simple value
 (sph/set-value!  env "accounts" "user1" "John")
-;;=> :ok
+;;=> "John"
 
 ;; get the value back
 (sph/get-value   env "accounts" "user1")
@@ -97,7 +95,7 @@ Now you can **get**/**set**/**delete** values with:
 
 ;; delete a key
 (sph/delete-key! env "accounts" "user1")
-;;=> :ok
+;;=> nil
 
 ;; now the key isn't present
 (sph/get-value   env "accounts" "user1")
@@ -106,7 +104,7 @@ Now you can **get**/**set**/**delete** values with:
 ;; set a complex value
 (sph/set-value! env "accounts" "user1"
             {:firstname "John" :lastname "Doe" :age 34 :balance 100.0})
-;;=> :ok
+;;=> {:firstname "John" :lastname "Doe" :age 34 :balance 100.0}
 
 ;; get it back
 (sph/get-value   env "accounts" "user1")
@@ -118,11 +116,11 @@ Let's add more data:
 ``` clojure
 (sph/set-value! env "accounts" "user2"
             {:firstname "Jane" :lastname "Smith" :age 28 :balance 200.0})
-;;=> :ok
+;;=> :{:firstname "Jane" :lastname "Smith" :age 28 :balance 200.0}
 
 (sph/set-value! env "accounts" "admin1"
             {:firstname "Robert" :lastname "Green" :age 32 :grants [:accounts/admin]})
-;;=> :ok
+;;=> {:firstname "Robert" :lastname "Green" :age 32 :grants [:accounts/admin]}
 ```
 
 ### Range queries
@@ -262,7 +260,7 @@ For example let's say we want to credit John (`user1`) with $150.0.
 (sph/with-transaction [tx (sph/begin-transaction env)]
   (let [user1 (sph/get-value tx "accounts" "user1")]
     (sph/set-value! tx "accounts" "user1" (update user1 :balance + 150.0))))
-;;=> :ok
+;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 250.0}
 
 ;; now let's verify the the new balance
 (sph/get-value env "accounts" "user1")
@@ -293,7 +291,7 @@ example of multi-key transaction.
       ;; atomically
       (sph/set-value! tx "accounts" "user1" (update user1 :balance - amount ))
       (sph/set-value! tx "accounts" "user2" (update user2 :balance + amount )))))
-;;=> :ok
+;;=> {:firstname "Jane", :lastname "Smith", :age 28, :balance 400.0}
 
 ;; now let's check the updated balances
 (sph/get-value env "accounts" "user2")
