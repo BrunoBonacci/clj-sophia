@@ -16,4 +16,6 @@
                    :plugins [[lein-midje "3.2.1"]
                              [criterium "0.4.4"]]}}
 
-  :jvm-opts ["-server" "-Djna.library.path=./lib/sophia"])
+  :jvm-opts ["-server"
+             #_"-Djna.library.path=./lib/sophia"
+             #_"-Djna.debug_load=true"])
