@@ -39,4 +39,4 @@ jobs:
           key: v1-dependencies-{{ checksum "project.clj" }}
 
       # run tests!
-      - run: TC_NUM_TESTS=100 lein midje
+      - run: TC_NUM_TESTS=500 lein midje

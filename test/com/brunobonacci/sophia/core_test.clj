@@ -129,7 +129,8 @@
           ;; set the key
           (db/set-value! sophia "test" key value)
           ;; get the value and check the result
-          (= value (db/get-value sophia "test" key))))]
+          (= value (db/get-value sophia "test" key)))
+         :max-size 100)]
     (pprint test)
     (fact "set then get symmetry"
           (:result test) => true)))
