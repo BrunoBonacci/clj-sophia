@@ -646,7 +646,7 @@
 
 
 (defn sp_lasterror [env]
-  (some-> (sp_getstring env "sophia.error") (Native/toString)))
+  (sp_getstring env "sophia.error"))
 
 
 
