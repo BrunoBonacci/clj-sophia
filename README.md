@@ -59,7 +59,7 @@ In order to use the library add the dependency to your `project.clj`
 [com.brunobonacci/clj-sophia "0.1.0"]
 ```
 
-Current version: [![safely](https://img.shields.io/clojars/v/com.brunobonacci/clj-sophia.svg)](https://clojars.org/com.brunobonacci/clj-sophia)
+Current version: [![Clojars Project](https://img.shields.io/clojars/v/com.brunobonacci/clj-shopia.svg)](https://clojars.org/com.brunobonacci/clj-shopia)
 
 
 Require the namespace:

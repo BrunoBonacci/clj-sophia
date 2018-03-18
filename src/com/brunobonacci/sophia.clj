@@ -291,21 +291,6 @@
                (range-query-iterate {:doc doc* :cursor cursor})))))))
 
 
-"
-(with-open [cur (sph/cursor env)]
-  (into {} (sph/range-query cur \"accounts\")))
-
-
-(with-open [cur (sph/cursor env)]
-  (into []
-        (sph/range-query cur \"accounts\"
-                         :key \"user1\" :order :desc)))
-
-
-        (with-open [cur (sph/cursor env)]
-          (into [] (sph/range-query cur \"accounts\"
-                                    :key \"user\" :search-type :prefix)))
-"
 
 (defn range-query
   "Returns a lazy-sequence of all items matching the query.
