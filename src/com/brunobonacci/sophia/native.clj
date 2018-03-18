@@ -395,7 +395,7 @@
   should be considered for online database close/drop cases.
   "
   [doc key]
-  (sp_getint doc key))
+  (.sp_getint jns doc key))
 
 
 

@@ -85,11 +85,13 @@
   (defn sophia
     "Returns a sophia db environment to access the databases"
     [config]
-    {:pre [(:sophia.path config) (:db config)]}
+    {:pre [(:sophia.path config) (:dbs config) (vector? (:dbs config))]}
     (let [env   (n/sp_env)
           envid (uuid)]
-      (doseq [[k v] config]
+      (doseq [[k v] (dissoc config :dbs)]
         (n/sp_setstring env (name k) v))
+      (doseq [db (:dbs config)]
+        (n/sp_setstring env "db" db))
       (n/op env (n/sp_open env))
       (swap! env-refs assoc envid env)
       {:env envid

@@ -76,7 +76,7 @@ Then create a sophia environment.
 ``` clojure
 
 (defonce env (sph/sophia {:sophia.path "/tmp/sophia-test"
-                          :db "accounts"}))
+                          :dbs ["accounts"]}))
 
 ```
 

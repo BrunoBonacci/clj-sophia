@@ -11,7 +11,7 @@
 
 
 (def env (sph/sophia {:sophia.path "/tmp/sophia-test"
-                      :db "accounts"}))
+                      :dbs ["accounts"]}))
 
 
 ;; set a simple value

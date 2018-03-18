@@ -29,7 +29,7 @@
 
 
 (defn rand-db [name]
-  (db/sophia {:sophia.path (rand-db-name name) :db name}))
+  (db/sophia {:sophia.path (rand-db-name name) :dbs [name]}))
 
 
 

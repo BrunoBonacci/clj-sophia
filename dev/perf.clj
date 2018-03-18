@@ -9,7 +9,7 @@
 (comment
 
   (def env (sph/sophia {:sophia.path "/tmp/sophia-perf"
-                        :db "perf"}))
+                        :dbs ["perf"]}))
 
 
 
