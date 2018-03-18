@@ -12,9 +12,9 @@
                  [com.taoensso/nippy "2.14.0"]]
 
   :profiles {:dev {:dependencies [[midje "1.9.1"]
-                                  [org.clojure/test.check "0.9.0"]]
-                   :plugins [[lein-midje "3.2.1"]
-                             [criterium "0.4.4"]]}}
+                                  [org.clojure/test.check "0.9.0"]
+                                  [criterium "0.4.4"]]
+                   :plugins [[lein-midje "3.2.1"]]}}
 
   :jvm-opts ["-server"
              #_"-Djna.library.path=./lib/sophia"
