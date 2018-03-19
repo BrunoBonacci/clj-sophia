@@ -167,8 +167,8 @@
                                   ;; return last value
                                   res#)
                                 (catch Throwable x#
-                                    (rollback ~(bindings 0))
-                                    (throw x#))))
+                                  (rollback ~(bindings 0))
+                                  (throw x#))))
     :else (throw (IllegalArgumentException.
                   "with-transaction only allows Symbols in bindings"))))
 

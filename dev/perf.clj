@@ -1,5 +1,5 @@
 (ns perf
-  (:require [com.brunobonacci.sophia]
+  (:require [com.brunobonacci.sophia :as sph]
             [criterium.core :refer [bench quick-bench]]))
 
 

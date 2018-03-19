@@ -9,7 +9,8 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [net.java.dev.jna/jna "4.5.1"]
-                 [com.taoensso/nippy "2.14.0"]]
+                 [com.taoensso/nippy "2.14.0"]
+                 [prismatic/schema "1.1.7"]]
 
   :profiles {:dev {:dependencies [[midje "1.9.1"]
                                   [org.clojure/test.check "0.9.0"]
