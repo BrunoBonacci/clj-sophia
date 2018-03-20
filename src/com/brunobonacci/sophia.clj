@@ -1,5 +1,6 @@
 (ns com.brunobonacci.sophia
   (:require [com.brunobonacci.sophia.native :as n]
+            [com.brunobonacci.sophia.config :as c]
             [taoensso.nippy :as nippy]
             [clojure.string :as str]))
 
@@ -85,13 +86,13 @@
   (defn sophia
     "Returns a sophia db environment to access the databases"
     [config]
-    {:pre [(:sophia.path config) (:dbs config) (vector? (:dbs config))]}
-    (let [env   (n/sp_env)
-          envid (uuid)]
-      (doseq [[k v] (dissoc config :dbs)]
-        (n/sp_setstring env (name k) v))
-      (doseq [db (:dbs config)]
-        (n/sp_setstring env "db" db))
+    (let [env    (n/sp_env)
+          envid  (uuid)
+          config (c/conform-config config)]
+      (doseq [[k v] (c/native-config config)]
+        (if (string? v)
+          (n/sp_setstring env k v)
+          (n/sp_setint env k v)))
       (n/op env (n/sp_open env))
       (swap! env-refs assoc envid env)
       {:env envid
