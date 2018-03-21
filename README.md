@@ -304,8 +304,8 @@ example of multi-key transaction.
                         {:from user1 :amount amount :to user2})))
       ;; these two update are inside a transaction and they will be stored
       ;; atomically
-      (sph/set-value! tx "accounts" "user1" (update user1 :balance - amount ))
-      (sph/set-value! tx "accounts" "user2" (update user2 :balance + amount )))))
+      (sph/set-value! tx "accounts" from (update user1 :balance - amount ))
+      (sph/set-value! tx "accounts" to   (update user2 :balance + amount )))))
 ;;=> {:firstname "Jane", :lastname "Smith", :age 28, :balance 400.0}
 
 ;; now let's check the updated balances
@@ -319,6 +319,48 @@ example of multi-key transaction.
 Transactions can also span multiple databases as long as they
 all belong to the same sophia environment
 
+``` clojure
+(require '[clj-time.core :as t]
+         '[clj-time.format :as f])
+
+
+(defn now-UTC
+  "Returns the current UTC timestamp in ISO format"
+  []
+  (f/unparse (f/formatters :date-time) (t/now)))
+
+
+(now-UTC)
+;;=> "2018-03-21T22:15:52.512Z"
+
+(let [from   "user2"
+      to     "user1"
+      amount 250.0]
+  ;; start transaction
+  (sph/with-transaction [tx (sph/begin-transaction env)]
+    (let [user1 (sph/get-value tx "accounts" from)
+          user2 (sph/get-value tx "accounts" to)]
+      (when-not (>= (:balance user1) amount)
+        (throw (ex-info (str "Insufficient funds in available from: " from)
+                        {:from user1 :amount amount :to user2})))
+      ;; add a entry in the `transactions`
+      (sph/set-value! tx "transactions" (now-UTC)
+                      {:tx-type :transfer :from from :amount amount :to to})
+      ;; now update both user's balance
+      (sph/set-value! tx "accounts" from (update user1 :balance - amount ))
+      (sph/set-value! tx "accounts" to   (update user2 :balance + amount )))))
+
+
+(with-open [cur (sph/cursor env)]
+  (into [] (sph/range-query cur "transactions")))
+;;=> [["2018-03-21T22:26:16.284Z" {:tx-type :transfer, :from "user2", :amount 250.0, :to "user1"}]]
+
+(sph/get-value env "accounts" "user2")
+;;=> {:firstname "Jane", :lastname "Smith", :age 28, :balance 150.0}
+
+(sph/get-value env "accounts" "user1")
+;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 300.0}
+```
 
 ## Configuraiton
 
