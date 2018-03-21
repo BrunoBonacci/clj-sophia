@@ -316,6 +316,132 @@ example of multi-key transaction.
 ;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 50.0}
 ```
 
+Transactions can also span multiple databases as long as they
+all belong to the same sophia environment
+
+
+## Configuraiton
+
+Here the configuration options for sophia environment:
+
+``` clojure
+{;; Set current Sophia environment directory.
+   ;; REQUIRED
+   ;; :sophia.path "/path/to/data"
+
+   ;; list of DBs to open/create
+   ;; REQUIRED / NON EMPTY
+   ;; every db item must be a simple db name or a map which can be configured
+   ;; as described in the following section.
+   ;; :dbs ["db1" {:name "db2"}]
+
+   ;; Set a number of worker threads.
+   ;; :scheduler.threads
+
+   ;; Current log sequential number.
+   ;; :metric.lsn
+
+   ;; Current transaction sequential number.
+   ;; :metric.tsn
+
+   ;; Current node sequential number.
+   ;; :metric.nsn
+
+   ;; Current database sequential number.
+   ;; :metric.dsn
+
+   ;; Current backup sequential number.
+   ;; :metric.bsn
+
+   ;; Current log file sequential number.
+   ;; :metric.lfsn
+
+   ;; Enable or disable Write Ahead transaction log.
+   ;; 0 - disabled, 1 - enabled
+   ;; :log.enable
+
+   ;; Set folder for transaction log directory. If variable is not
+   ;; set, it will be automatically set as **${sophia.path}/_txlog**.
+   :log.path (str (:sophia.path cfg) "/_txlog")
+
+   ;; Sync transaction log on every commit.
+   ;; 0 - No, 1 - Yes
+   ;; :log.sync
+
+   ;; Create new log file after rotate_wm updates.
+   ;; :log.rotate_wm
+
+   ;; Sync log file on every rotation.
+   ;; 0 - No, 1 - Yes
+   ;; :log.rotate_sync
+   }
+```
+
+Databases can be just strings or maps. Maps accepts the following
+configuration options:
+
+``` clojure
+  {;; name of the database
+   ;; REQUIRED
+   ;; :name
+
+   ;; Database's sequential id number. This number is used in the
+   ;; transaction log for the database identification.
+   ;; :id
+
+   ;; Set folder to store database data. If variable is not set, it
+   ;; will be automatically set as **${sophia.path}/database_name**.
+   ;; :path
+
+   ;; Enable or disable mmap mode.
+   :mmap 1
+
+   ;; Enable or disable O_DIRECT mode.
+   ;; 0 - disabled, 1 - enabled
+   ;; :direct_io
+
+   ;; Sync node file on compaction completion.
+   ;; 0 - No, 1 - Yes
+   ;; :sync (s/both s/Int (s/enum 0 1))
+
+   ;; Enable or disable key expire.
+   ;; 0 - disabled, 1 - enabled
+   ;; :expire
+
+   ;; Specify compression driver. Supported: lz4, zstd, none (default).
+   ;; :compression "none"
+
+   ;; Scheme field size limit.
+   ;; :limit.field
+
+   ;; Total write cache size used for compaction
+   ;; (see "memory requirements")
+   ;; :compaction.cache
+
+   ;; Set a node file size in bytes. Node file can grow up to two
+   ;; times the size before the old node file is being split.
+   ;; :compaction.node_size
+
+   ;; Set size of a page to use.
+   ;; :compaction.page_size
+
+   ;; Check checksum during compaction.
+   ;; 0 - No, 1 - Yes
+   ;; :compaction.page_checksum
+
+   ;; Run expire check process every expire_period seconds.
+   ;; :compaction.expire_period
+
+   ;; Garbage collection starts when watermark value reaches a certain
+   ;; percent of duplicates. When this value reaches a compaction,
+   ;; operation is scheduled.
+   ;; :compaction.gc_wm
+
+   ;; Check for a gc every gc_period seconds.
+   ;; :compaction.gc_period
+   }
+```
+
 ## How to build.
 
 To build locally this project proceed as following:

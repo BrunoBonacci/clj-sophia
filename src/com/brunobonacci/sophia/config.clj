@@ -9,7 +9,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(def DEFAULT-CONFIG [cfg]
+(defn- default-config
+  "returns a map with the default general configuration values.
+   Because some of the defaults depends on values which the user
+   enters this is a function of the user's config."
+  [cfg]
   {;; Set current Sophia environment directory.
    ;; REQUIRED
    ;; :sophia.path "/path/to/data"
@@ -63,7 +67,11 @@
 
 
 
-(def DEFAULT-DB-CONFIG [cfg]
+(defn- default-db-config
+  "returns a map with the default db configuration values.
+   Because some of the defaults depends on values which the user
+   enters this is a function of the user's config."
+  [cfg]
   { ;; name of the database
    ;; REQUIRED
    ;; :name
@@ -231,12 +239,13 @@
 
 (defn- environment-defaults
   [config]
-  config)
+  (merge (default-config config)
+         config))
 
 
 
 (defn- database-defaults [db-config]
-  (merge {:mmap 1}
+  (merge (default-db-config db-config)
          db-config))
 
 
