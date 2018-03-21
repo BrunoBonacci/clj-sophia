@@ -3,6 +3,7 @@
             [criterium.core :refer [bench quick-bench]]))
 
 
+
 (def uuid #'com.brunobonacci.sophia/uuid)
 
 
@@ -33,8 +34,8 @@
   ;; Overhead used : 2.107959 ns
   ;;
   ;; Found 2 outliers in 60 samples (3.3333 %)
-  ;; low-severe	 1 (1.6667 %)
-  ;; low-mild	 1 (1.6667 %)
+  ;; low-severe  1 (1.6667 %)
+  ;; low-mild    1 (1.6667 %)
   ;; Variance from outliers : 17.3832 % Variance is moderately inflated by outliers
 
 
@@ -73,8 +74,8 @@
   ;; Overhead used : 2.107959 ns
   ;;
   ;; Found 2 outliers in 60 samples (3.3333 %)
-  ;; low-severe	 1 (1.6667 %)
-  ;; low-mild	 1 (1.6667 %)
+  ;; low-severe  1 (1.6667 %)
+  ;; low-mild    1 (1.6667 %)
   ;; Variance from outliers : 38.4649 % Variance is moderately inflated by outliers
 
 
@@ -106,7 +107,7 @@
   ;; Overhead used : 2.107959 ns
   ;;
   ;; Found 2 outliers in 60 samples (3.3333 %)
-  ;; low-severe	 2 (3.3333 %)
+  ;; low-severe  2 (3.3333 %)
   ;; Variance from outliers : 6.2739 % Variance is slightly inflated by outliers
 
 
