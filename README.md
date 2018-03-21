@@ -61,6 +61,21 @@ In order to use the library add the dependency to your `project.clj`
 
 Current version: [![Clojars Project](https://img.shields.io/clojars/v/com.brunobonacci/clj-shopia.svg)](https://clojars.org/com.brunobonacci/clj-shopia)
 
+Supported platforms:
+
+| Platform      | Supported       | Note            |
+|---------------|-----------------|-----------------|
+| linux-x86-64  | embedded        | linux 64-bits   |
+| linux-x86     | need to install | linux 32-bits   |
+| darwin-x86-64 | embedded        | Mac OSX 64-bits |
+| win32-x86     | need to install | Windows 32-bits |
+| win32-x86-64  | need to install | Windows 64-bits |
+
+For the platform you need to install please see [instructions
+here](http://sophia.systems/v2.2/tutorial/build.html). Then ensure
+that the java property `-Djna.library.path=/path/to/sophia/lib` is
+set.
+
 
 Require the namespace:
 
@@ -308,6 +323,8 @@ To build locally this project proceed as following:
 ``` bash
 # clone this repo
 git clone https://github.com/BrunoBonacci/clj-sophia.git
+
+# if you need to rebuild the native dependencies
 cd clj-sophia/lib
 # download and build sophia db
 ./build.sh

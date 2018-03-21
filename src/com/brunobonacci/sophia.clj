@@ -64,6 +64,7 @@
 (let [;; Hide native references away to avoid
       ;; misuse and potential JVM crashes.
       env-refs (atom {})
+      dbs-refs (atom {})
       trx-refs (atom {})]
 
   ;;
@@ -72,6 +73,11 @@
   (defn- env* [id]
     (or (get @env-refs id)
        (throw (ex-info "Environment not found or terminated." {:env id}))))
+
+
+  (defn- dbr* [envid db-name]
+    (or (get @dbs-refs (str envid "/" db-name))
+       (throw (ex-info "DB not found." {:envid envid :db-name db-name}))))
 
 
   (defn- trx* [id]
@@ -89,12 +95,23 @@
     (let [env    (n/sp_env)
           envid  (uuid)
           config (c/conform-config config)]
+      ;; set configuration
       (doseq [[k v] (c/native-config config)]
         (if (string? v)
           (n/sp_setstring env k v)
           (n/sp_setint env k v)))
+      ;; open environment
       (n/op env (n/sp_open env))
+      ;; store ref
       (swap! env-refs assoc envid env)
+      ;; get DBs refs
+      (doseq [db (:dbs config)]
+        (let [db*   (n/sp_getobject env (str "db." (:name db)))
+              dbid (str envid "/" (:name db))]
+          (when-not ref
+            (throw (ex-info "Couldn't retrieve a database reference." db)))
+          (swap! dbs-refs assoc dbid db*)))
+      ;; return the env
       {:env envid
        :config config}))
 
@@ -189,7 +206,7 @@
   It returns the value which for set in.
   "
   [{:keys [env trx] :as sophia} db key value]
-  (if-let [db* (n/sp_getobject (env* env) (str "db." db))]
+  (if-let [db* (dbr* env db)]
     (let [doc* (n/sp_document db*)]
       (n/sp_setstring doc* "key" key)
       (n/sp_setbytes  doc* "value" (nippy/freeze value))
@@ -212,7 +229,7 @@
   ([{:keys [env trx] :as sophia} db key default-value]
    (or (get-value sophia db key) default-value))
   ([{:keys [env trx] :as sophia} db key]
-   (if-let [db* (n/sp_getobject (env* env) (str "db." db))]
+   (if-let [db* (dbr* env db)]
      (let [doc* (n/sp_document db*)
            _    (n/sp_setstring doc* "key" key)
            v*   (n/sp_get (if trx (trx* trx) db*) doc*)]
@@ -228,7 +245,7 @@
   passed the change will only be visible when the transaction
   is committed. It returns `nil`."
   [{:keys [env trx] :as sophia} db key]
-  (if-let [db* (n/sp_getobject (env* env) (str "db." db))]
+  (if-let [db* (dbr* env db)]
     (let [doc* (n/sp_document db*)
           _    (n/sp_setstring doc* "key" key)
           _    (n/op (env* env) (n/sp_delete (if trx (trx* trx) db*) doc*))]
@@ -364,7 +381,7 @@
          (#{:asc :desc} order)
          (#{:prefix :index-scan-inclusive
             :index-scan-exclusive} search-type)]}
-  (if-let [db*  (n/sp_getobject (sophia-ref cursor) (str "db." db))]
+  (if-let [db*  (dbr* (:env (sophia-env cursor)) db)]
     (let [doc*  (n/sp_document db*)
           order (if (= :desc order) "<=" ">=")
           order (if (= :index-scan-exclusive search-type)
