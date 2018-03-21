@@ -56,7 +56,7 @@ search, common key-value, etc.
 In order to use the library add the dependency to your `project.clj`
 
 ``` clojure
-[com.brunobonacci/clj-sophia "0.2.0"]
+[com.brunobonacci/clj-sophia "0.2.1"]
 ```
 
 Current version: [![Clojars Project](https://img.shields.io/clojars/v/com.brunobonacci/clj-shopia.svg)](https://clojars.org/com.brunobonacci/clj-shopia)
@@ -361,8 +361,8 @@ Here the configuration options for sophia environment:
    ;; :log.enable
 
    ;; Set folder for transaction log directory. If variable is not
-   ;; set, it will be automatically set as **${sophia.path}/_txlog**.
-   :log.path (str (:sophia.path cfg) "/_txlog")
+   ;; set, it will be automatically set as **${sophia.path}/_tx-log**.
+   :log.path (str (:sophia.path cfg) "/_tx-log")
 
    ;; Sync transaction log on every commit.
    ;; 0 - No, 1 - Yes

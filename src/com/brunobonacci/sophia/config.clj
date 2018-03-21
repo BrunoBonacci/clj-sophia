@@ -50,8 +50,8 @@
    ;; :log.enable
 
    ;; Set folder for transaction log directory. If variable is not
-   ;; set, it will be automatically set as **${sophia.path}/_txlog**.
-   :log.path (str (:sophia.path cfg) "/_txlog")
+   ;; set, it will be automatically set as **${sophia.path}/_tx-log**.
+   :log.path (str (:sophia.path cfg) "/_tx-log")
 
    ;; Sync transaction log on every commit.
    ;; 0 - No, 1 - Yes
