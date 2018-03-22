@@ -1,4 +1,5 @@
-(ns com.brunobonacci.sophia.stats)
+(ns com.brunobonacci.sophia.stats
+  (:require [clojure.string :as str]))
 
 
 (def configurable-keys
@@ -110,3 +111,25 @@
     :db.$name.scheduler.expire         [int,    ro] "Shows if expire operation is in progress."
     :db.$name.scheduler.backup         [int,    ro] "Shows if backup operation is in progress."
     ])
+
+
+
+(def stats-keys
+  (->> (partition 3 configurable-keys)
+       (remove (fn [[k [t ro] d]] (= t 'function)))
+       (remove (fn [[k [t ro] d]] (str/ends-with? (name k) "_arg")))
+       (map (fn [[k [t ro] d]]
+              (let [v {:type t :parametric (str/includes? (name k) "$")}]
+                [(keyword (str/replace (name k) #"\$[^.]+\." "")) v])))
+       (into {})))
+
+
+
+(defn std-key
+  [key]
+  (let [k (name key)]
+    (keyword
+     (cond
+       (str/starts-with? k "db.") (str/replace k #"^db\.[^.]+\." "db.")
+       (re-matches #"scheduler\.\d\.trace" k) "scheduler.trace"
+       :else k))))

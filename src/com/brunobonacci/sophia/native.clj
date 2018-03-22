@@ -644,9 +644,17 @@
   (.sp_commit jns tx))
 
 
+(defn c-string->jvm
+  [^String s]
+  (when s
+    (let [bytez (.getBytes s)]
+      (String. bytez 0 (Math/max 0 (dec (count bytez)))))))
+
+
 
 (defn sp_lasterror [env]
-  (sp_getstring env "sophia.error"))
+  (c-string->jvm
+   (sp_getstring env "sophia.error")))
 
 
 

@@ -1,6 +1,7 @@
 (ns com.brunobonacci.sophia
   (:require [com.brunobonacci.sophia.native :as n]
             [com.brunobonacci.sophia.config :as c]
+            [com.brunobonacci.sophia.stats :as st]
             [taoensso.nippy :as nippy]
             [clojure.string :as str]))
 
@@ -399,3 +400,22 @@
       (range-query-iterate {:doc doc* :cursor cursor}))
     (throw
      (db-error sophia db "Database %s not found!" db))))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;               ----==| S T A T S   &   M E T R I C S |==----                ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn metric-value
+  "returns the current value of a metric if available, nil otherwise."
+  [{:keys [env] :as sophia} metric]
+  (when-let [mt (st/stats-keys (st/std-key metric))]
+    (let [e* (env* env)
+          m  (name metric)]
+      (if (= 'string (:type mt))
+        (n/c-string->jvm (n/sp_getstring e* m))
+        (as-> (n/sp_getint e* m) $ (if (= $ -1) nil $))))))
