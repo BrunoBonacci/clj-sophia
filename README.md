@@ -89,10 +89,13 @@ Require the namespace:
 Then create a sophia environment.
 
 ``` clojure
-
-(defonce env (sph/sophia {:sophia.path "/tmp/sophia-test"
-                          :dbs ["accounts"]}))
-
+;; create a sophia environment.
+(def env
+  (sph/sophia
+   {;; where to store the files on disk
+    :sophia.path "/tmp/sophia-test"
+    ;; which logical databases to create
+    :dbs ["accounts", {:name "transactions"}]}))
 ```
 
 ### Basic operations

@@ -10,8 +10,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(def env (sph/sophia {:sophia.path "/tmp/sophia-test"
-                      :dbs ["accounts", {:name "transactions"}]}))
+(def env
+  (sph/sophia
+   {;; where to store the files on disk
+    :sophia.path "/tmp/sophia-test"
+    ;; which logical databases to create
+    :dbs ["accounts", {:name "transactions"}]}))
 
 
 ;; set a simple value
