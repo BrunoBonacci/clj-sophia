@@ -1,4 +1,4 @@
-(defproject com.brunobonacci/clj-sophia "0.3.0-SNAPSHOT"
+(defproject com.brunobonacci/clj-sophia "0.3.0"
   :description "a Clojure driver for sophia DB."
   :url "https://github.com/BrunoBonacci/clj-sophia"
 
