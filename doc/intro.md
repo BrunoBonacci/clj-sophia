@@ -1,3 +1,3 @@
-# Introduction to clj-shopia
+# Introduction to clj-sophia
 
 TODO: write [great documentation](http://jacobian.org/writing/what-to-write/)

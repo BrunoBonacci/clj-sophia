@@ -1,11 +1,11 @@
-(defproject com.brunobonacci/clj-shopia "0.2.1"
+(defproject com.brunobonacci/clj-sophia "0.3.0-SNAPSHOT"
   :description "a Clojure driver for sophia DB."
   :url "https://github.com/BrunoBonacci/clj-sophia"
 
   :license {:name "Apache License 2.0"
             :url "http://www.apache.org/licenses/LICENSE-2.0"}
 
-  :scm {:name "git" :url "https://github.com/BrunoBonacci/clj-sohpia"}
+  :scm {:name "git" :url "https://github.com/BrunoBonacci/clj-sophia"}
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [net.java.dev.jna/jna "4.5.1"]

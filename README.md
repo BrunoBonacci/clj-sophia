@@ -1,4 +1,4 @@
-# clj-shopia
+# clj-sophia
 
 A Clojure driver for [Sophia DB](http://sophia.systems/).
 
@@ -59,7 +59,7 @@ In order to use the library add the dependency to your `project.clj`
 [com.brunobonacci/clj-sophia "0.2.1"]
 ```
 
-Current version: [![Clojars Project](https://img.shields.io/clojars/v/com.brunobonacci/clj-shopia.svg)](https://clojars.org/com.brunobonacci/clj-shopia)
+Current version: [![Clojars Project](https://img.shields.io/clojars/v/com.brunobonacci/clj-sophia.svg)](https://clojars.org/com.brunobonacci/clj-sophia)
 
 Supported platforms:
 
