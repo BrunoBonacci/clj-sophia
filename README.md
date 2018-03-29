@@ -489,6 +489,20 @@ configuration options:
    }
 ```
 
+## Metrics
+
+```
+sophia.<db-name>.set-value.time
+sophia.<db-name>.get-value.time
+sophia.<db-name>.delete-key.time
+sophia.<db-name>.serialization.time
+sophia.<db-name>.deserialization.time
+sophia.<db-name>.serialization.payload-size
+sophia.<db-name>.deserialization.payload-size
+sophia.<db-name>.range-query.seek.time
+sophia.<db-name>.range-query.scan.time
+```
+
 ## How to build.
 
 To build locally this project proceed as following:

@@ -3,7 +3,8 @@
             [com.brunobonacci.sophia.config :as c]
             [com.brunobonacci.sophia.stats :as st]
             [taoensso.nippy :as nippy]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [samsara.trackit :as trackit]))
 
 
 
@@ -198,6 +199,16 @@
 ;;                                                                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn serialize [{:keys [env trx] :as sophia} db value]
+  (trackit/track-time (str "sophia." db ".serialization.time")
+    (trackit/track-distribution (str "sophia." db ".serialization.payload-size")
+      (nippy/freeze value))))
+
+
+(defn deserialize [{:keys [env trx] :as sophia} db value]
+  (trackit/track-time (str "sophia." db ".deserialization.time")
+                      (trackit/track-distribution (str "sophia." db ".deserialization.payload-size")
+                                                  (nippy/thaw value))))
 
 
 (defn set-value!
@@ -207,14 +218,15 @@
   It returns the value which for set in.
   "
   [{:keys [env trx] :as sophia} db key value]
-  (if-let [db* (dbr* env db)]
-    (let [doc* (n/sp_document db*)]
-      (n/sp_setstring doc* "key" key)
-      (n/sp_setbytes  doc* "value" (nippy/freeze value))
-      (n/op (env* env) (n/sp_set (if trx (trx* trx) db*) doc*))
-      value)
-    (throw
-     (db-error sophia db "Database %s not found!" db))))
+  (trackit/track-time (str "sophia." db ".set-value.time")
+    (if-let [db* (dbr* env db)]
+     (let [doc* (n/sp_document db*)]
+       (n/sp_setstring doc* "key" key)
+       (n/sp_setbytes  doc* "value" (serialize sophia db value))
+       (n/op (env* env) (n/sp_set (if trx (trx* trx) db*) doc*))
+       value)
+     (throw
+      (db-error sophia db "Database %s not found!" db)))))
 
 
 
@@ -235,7 +247,7 @@
            _    (n/sp_setstring doc* "key" key)
            v*   (n/sp_get (if trx (trx* trx) db*) doc*)]
        (n/with-ref v*
-         (nippy/thaw (n/sp_getbytes v* "value"))))
+         (deserialize sophia db (n/sp_getbytes v* "value"))))
      (throw
       (db-error sophia db "Database %s not found!" db)))))
 
