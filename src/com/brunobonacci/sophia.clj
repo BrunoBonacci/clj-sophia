@@ -410,12 +410,31 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(defn metric-env
+  "returns a cacheable metrics environment which can be used to retrieve specific
+  database metrics."
+  [{:keys [env] :as sophia-env}]
+  {:sophia-env sophia-env
+   :available-keys (st/available-keys (env* env) (map :name (get-in sophia-env [:config :dbs])))})
+
+
+
 (defn metric-value
   "returns the current value of a metric if available, nil otherwise."
-  [{:keys [env] :as sophia} metric]
-  (when-let [mt (st/stats-keys (st/std-key metric))]
+  [{:keys [available-keys] {:keys [env]} :sophia-env :as metric-env} metric]
+  (when-let [mt (available-keys metric)]
     (let [e* (env* env)
           m  (name metric)]
-      (if (= 'string (:type mt))
-        (n/c-string->jvm (n/sp_getstring e* m))
-        (as-> (n/sp_getint e* m) $ (if (= $ -1) nil $))))))
+      (st/-metric-value e* m (:type mt)))))
+
+
+
+(defn all-metric-values
+  "Returns a map with the current value of all database metrics for the
+  given environment."
+  [{:keys [available-keys] :as metric-env}]
+  (->> available-keys
+       (remove #(= :function (:type (second %))))
+       keys
+       (map (juxt identity (partial metric-value metric-env)))
+       (into {})))
