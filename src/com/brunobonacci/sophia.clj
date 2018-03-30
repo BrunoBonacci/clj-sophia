@@ -51,9 +51,10 @@
 (defn- deserialize
   "Given an array of bytes return a decoded Clojure value."
   [{:keys [env trx] :as sophia} db value]
+  (trackit/track-distribution (str "sophia." db ".deserialization.payload-size")
+    (count value))
   (trackit/track-time (str "sophia." db ".deserialization.time")
-    (trackit/track-distribution (str "sophia." db ".deserialization.payload-size")
-      (nippy/thaw value))))
+    (nippy/thaw value)))
 
 
 
