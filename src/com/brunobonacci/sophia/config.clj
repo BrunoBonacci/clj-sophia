@@ -80,7 +80,7 @@
                ;; :none - track none
                ;; #(not (str/starts-with (name %1) "db.")) - track everything
                ;;     excluding db specific metrics.
-               :track-native :all
+               :track-native :none
                }
     }
    })

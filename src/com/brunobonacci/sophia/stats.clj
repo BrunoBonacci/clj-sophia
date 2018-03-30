@@ -11,7 +11,6 @@
    {:key :sophia.build,           :type :string,   :read-only? true,  :description "Get git commit id of a current build."}
    {:key :sophia.status,          :type :string,   :read-only? true,  :description "Get Sophia status (eg. online)."}
    {:key :sophia.errors,          :type :int,      :read-only? true,  :description "Get a number of errors."}
-   {:key :sophia.error,           :type :string,   :read-only? true,  :description "Get last error description."}
    {:key :sophia.path,            :type :string,   :read-only? false, :description "Set current Sophia environment directory."}
    {:key :sophia.on_log,          :type :function, :read-only? false, :description "Set log function."}
    {:key :sophia.on_log_arg,      :type :string,   :read-only? false, :description "Set log function argument."}
@@ -27,8 +26,8 @@
    {:key :transaction.rollback,   :type :int,      :read-only? true,  :description "Total number of transaction rollbacks."}
    {:key :transaction.conflict,   :type :int,      :read-only? true,  :description "Total number of transaction conflicts."}
    {:key :transaction.lock,       :type :int,      :read-only? true,  :description "Total number of transaction locks."}
-   {:key :transaction.latency,    :type :string,   :read-only? true,  :description "Average transaction latency from begin till commit."}
-   {:key :transaction.log,        :type :string,   :read-only? true,  :description "Average transaction log length."}
+   {:key :transaction.latency,    :type :string,   :read-only? true,  :description "Average transaction latency from begin till commit." :format :latency}
+   {:key :transaction.log,        :type :string,   :read-only? true,  :description "Average transaction log length." :format :triplet}
    {:key :transaction.vlsn,       :type :int,      :read-only? true,  :description "Current VLSN."}
    {:key :transaction.gc,         :type :int,      :read-only? true,  :description "SSI GC queue size."}
 
@@ -86,24 +85,24 @@
    {:group :db, :key :compaction.gc_period,     :type :int,      :read-only? false, :parametrized-by "db.name", :prefix "db", :suffix "compaction.gc_period",     :description "Check for a gc every gc_period seconds."}
    {:group :db, :key :stat.documents_used,      :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.documents_used",      :description "Memory used by allocated document."}
    {:group :db, :key :stat.documents,           :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.documents",           :description "Number of currently allocated document."}
-   {:group :db, :key :stat.field,               :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.field",               :description "Average field size."}
+   {:group :db, :key :stat.field,               :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.field",               :description "Average field size." :format :triplet}
    {:group :db, :key :stat.set,                 :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.set",                 :description "Total number of Set operations."}
-   {:group :db, :key :stat.set_latency,         :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.set_latency",         :description "Average Set latency."}
+   {:group :db, :key :stat.set_latency,         :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.set_latency",         :description "Average Set latency." :format :latency}
    {:group :db, :key :stat.delete,              :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.delete",              :description "Total number of Delete operations."}
-   {:group :db, :key :stat.delete_latency,      :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.delete_latency",      :description "Average Delete latency."}
+   {:group :db, :key :stat.delete_latency,      :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.delete_latency",      :description "Average Delete latency." :format :latency}
    {:group :db, :key :stat.upsert,              :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.upsert",              :description "Total number of Upsert operations."}
-   {:group :db, :key :stat.upsert_latency,      :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.upsert_latency",      :description "Average Upsert latency."}
+   {:group :db, :key :stat.upsert_latency,      :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.upsert_latency",      :description "Average Upsert latency." :format :latency}
    {:group :db, :key :stat.get,                 :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.get",                 :description "Total number of Get operations."}
-   {:group :db, :key :stat.get_latency,         :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.get_latency",         :description "Average Get latency."}
-   {:group :db, :key :stat.get_read_disk,       :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.get_read_disk",       :description "Average disk reads by Get operation."}
-   {:group :db, :key :stat.get_read_cache,      :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.get_read_cache",      :description "Average cache reads by Get operation."}
+   {:group :db, :key :stat.get_latency,         :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.get_latency",         :description "Average Get latency." :format :latency}
+   {:group :db, :key :stat.get_read_disk,       :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.get_read_disk",       :description "Average disk reads by Get operation." :format :latency}
+   {:group :db, :key :stat.get_read_cache,      :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.get_read_cache",      :description "Average cache reads by Get operation." :format :latency}
    {:group :db, :key :stat.pread,               :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.pread",               :description "Total number of pread operations."}
-   {:group :db, :key :stat.pread_latency,       :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.pread_latency",       :description "Average pread latency."}
+   {:group :db, :key :stat.pread_latency,       :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.pread_latency",       :description "Average pread latency." :format :latency}
    {:group :db, :key :stat.cursor,              :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.cursor",              :description "Total number of Cursor operations."}
-   {:group :db, :key :stat.cursor_latency,      :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.cursor_latency",      :description "Average Cursor latency."}
-   {:group :db, :key :stat.cursor_read_disk,    :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.cursor_read_disk",    :description "Average disk reads by Cursor operation."}
-   {:group :db, :key :stat.cursor_read_cache,   :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.cursor_read_cache",   :description "Average cache reads by Cursor operation."}
-   {:group :db, :key :stat.cursor_ops,          :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.cursor_ops",          :description "Average number of keys read by Cursor operation."}
+   {:group :db, :key :stat.cursor_latency,      :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.cursor_latency",      :description "Average Cursor latency." :format :latency}
+   {:group :db, :key :stat.cursor_read_disk,    :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.cursor_read_disk",    :description "Average disk reads by Cursor operation." :format :latency}
+   {:group :db, :key :stat.cursor_read_cache,   :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.cursor_read_cache",   :description "Average cache reads by Cursor operation." :format :latency}
+   {:group :db, :key :stat.cursor_ops,          :type :string,   :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "stat.cursor_ops",          :description "Average number of keys read by Cursor operation." :format :latency}
    {:group :db, :key :scheduler.gc,             :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "scheduler.gc",             :description "Shows if gc operation is in progress."}
    {:group :db, :key :scheduler.expire,         :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "scheduler.expire",         :description "Shows if expire operation is in progress."}
    {:group :db, :key :scheduler.backup,         :type :int,      :read-only? true,  :parametrized-by "db.name", :prefix "db", :suffix "scheduler.backup",         :description "Shows if backup operation is in progress."}
@@ -119,6 +118,38 @@
     :int    (as-> (n/sp_getint env* metric-name) $ (if (= $ -1) nil $))
     (throw (ex-info "Unsupported metric type"
                     {:metric-name metric-name :type type}))))
+
+
+
+(defn parse-double
+  [num]
+  (when num
+    (Double/parseDouble num)))
+
+
+
+(defn micros->millis
+  [time]
+  (when time
+    (/ time 1000)))
+
+
+
+(defn parse-triplet
+  [val]
+  (when val
+    (->> (str/split val #" ")
+         (map parse-double)
+         (zipmap [:min :max :avg]))))
+
+
+
+(defn parse-latency
+  [lantency]
+  (when lantency
+    (->> (str/split lantency #" ")
+         (map (comp micros->millis parse-double))
+         (zipmap [:min :max :avg]))))
 
 
 

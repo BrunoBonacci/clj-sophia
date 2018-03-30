@@ -463,7 +463,11 @@
   (when-let [mt (available-keys metric)]
     (let [e* (env* env)
           m  (name metric)]
-      (st/-metric-value e* m (:type mt)))))
+      (let [val (st/-metric-value e* m (:type mt))]
+        (case (:format mt)
+          :latency (st/parse-latency val)
+          :triplet (st/parse-triplet val)
+          val)))))
 
 
 
@@ -489,8 +493,16 @@
                          track-native)
           me (metric-env sophia-env)]
       (doseq [mk (->> (:available-keys me)
-                      (remove #(= :function (:type (second %))))
-                      keys)]
-        (when (track-native mk)
-          (trackit/track-value (str "sophia.native." (name mk))
-            (metric-value me mk)))))))
+                      (map second)
+                      (remove #(= :function (:type %))))]
+        (when (track-native (:key mk))
+          (if (or (= :latency (:format mk)) (= :triplet (:format mk)))
+            (do
+              (trackit/track-value (str "sophia.native." (name (:key mk)) ".min")
+                (:min (metric-value me (:key mk))))
+              (trackit/track-value (str "sophia.native." (name (:key mk)) ".max")
+                (:max (metric-value me (:key mk))))
+              (trackit/track-value (str "sophia.native." (name (:key mk)) ".avg")
+                (:avg (metric-value me (:key mk)))))
+            (trackit/track-value (str "sophia.native." (name (:key mk)))
+              (metric-value me (:key mk)))))))))
