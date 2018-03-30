@@ -90,6 +90,9 @@
 
 
 
+;; defined later
+(declare track-native-metrics)
+
 
 (let [;; Hide native references away to avoid
       ;; misuse and potential JVM crashes.
@@ -141,9 +144,12 @@
           (when-not ref
             (throw (ex-info "Couldn't retrieve a database reference." db)))
           (swap! dbs-refs assoc dbid db*)))
-      ;; return the env
-      {:env envid
-       :config config}))
+
+      (let [sophia-env {:env envid :config config}]
+        ;; track native metrics
+        (track-native-metrics sophia-env)
+        ;; return the env
+        sophia-env)))
 
 
 
@@ -470,3 +476,21 @@
        keys
        (map (juxt identity (partial metric-value metric-env)))
        (into {})))
+
+
+
+(defn- track-native-metrics
+  "Utility function which tracks native metrics into TrackIt metrics system."
+  [sophia-env]
+  (when-let [track-native (get-in sophia-env [:config :driver :tracking :track-native])]
+    (let [track-native (case track-native
+                         :all (constantly true),
+                         :none (constantly false)
+                         track-native)
+          me (metric-env sophia-env)]
+      (doseq [mk (->> (:available-keys me)
+                      (remove #(= :function (:type (second %))))
+                      keys)]
+        (when (track-native mk)
+          (trackit/track-value (str "sophia.native." (name mk))
+            (metric-value me mk)))))))

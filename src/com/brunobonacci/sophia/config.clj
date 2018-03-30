@@ -63,6 +63,26 @@
    ;; Sync log file on every rotation.
    ;; 0 - No, 1 - Yes
    ;; :log.rotate_sync
+
+   ;;
+   ;; --= driver's properties ==-
+   ;;
+   :driver
+   {;; Tracking settings
+    :tracking {;; which native metrics should be tracked via TrackIt
+               ;; It accept a function which takes 1 argument (the metric key)
+               ;; and it returns true or false whether the metric should be
+               ;; tracked or not. The tracking is initiated at environment
+               ;; creation.
+               ;; Default: track all metrics
+               ;; Possible options:
+               ;; :all  - track all
+               ;; :none - track none
+               ;; #(not (str/starts-with (name %1) "db.")) - track everything
+               ;;     excluding db specific metrics.
+               :track-native :all
+               }
+    }
    })
 
 
@@ -93,7 +113,7 @@
 
    ;; Sync node file on compaction completion.
    ;; 0 - No, 1 - Yes
-   ;; :sync (s/both s/Int (s/enum 0 1))
+   ;; :sync
 
    ;; Enable or disable key expire.
    ;; 0 - disabled, 1 - enabled
@@ -233,14 +253,37 @@
    (s/optional-key :log.rotate_wm) s/Int
 
    ;; Sync log file on every rotation.
-   (s/optional-key :log.rotate_sync) (s/both s/Int (s/enum 0 1))})
+   (s/optional-key :log.rotate_sync) (s/both s/Int (s/enum 0 1))
+
+   ;;
+   ;; --= driver's properties ==-
+   ;;
+   :driver
+   {;; Tracking settings
+    :tracking {;; which native metrics should be tracked via TrackIt
+               :track-native (s/either
+                              (s/enum :all :none)
+                              (s/pred fn? "track-native must be one of: :all, :none, or a function"))
+               }
+    }
+   })
+
+
+
+(defn deep-merge
+  "Like merge, but merges maps recursively."
+  [& maps]
+  (let [maps (filter (comp not nil?) maps)]
+    (if (every? map? maps)
+      (apply merge-with deep-merge maps)
+      (last maps))))
 
 
 
 (defn- environment-defaults
   [config]
-  (merge (default-config config)
-         config))
+  (deep-merge (default-config config)
+              config))
 
 
 
@@ -268,7 +311,7 @@
   [config]
   (let [dbs (:dbs config)]
     (concat
-     (map (fn [[k v]] [(name k) v]) (dissoc config :dbs))
+     (map (fn [[k v]] [(name k) v]) (dissoc config :dbs :driver))
      (mapcat #(let [n (:name %)]
                 (map (fn [[k v]]
                        [(if (= :name k)

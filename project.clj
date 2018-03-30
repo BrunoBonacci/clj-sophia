@@ -11,7 +11,7 @@
   :dependencies [[net.java.dev.jna/jna "4.5.1"]
                  [com.taoensso/nippy "2.14.0"]
                  [prismatic/schema "1.1.7"]
-                 [samsara/trackit-core "0.7.0-SNAPSHOT"]]
+                 [samsara/trackit-core "0.7.0"]]
 
   :profiles
   {:1.8  {:dependencies [[org.clojure/clojure "1.8.0"]]}
