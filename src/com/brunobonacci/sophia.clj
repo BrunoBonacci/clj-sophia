@@ -30,6 +30,33 @@
             :db db}))
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;                  ---==| S E R I A L I Z A T I O N |==----                  ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+(defn- serialize
+  "Given a Clojure value returns an array of bytes"
+  [{:keys [env trx] :as sophia} db value]
+  (trackit/track-time (str "sophia." db ".serialization.time")
+    (trackit/track-distribution (str "sophia." db ".serialization.payload-size")
+      (nippy/freeze value))))
+
+
+
+(defn- deserialize
+  "Given an array of bytes return a decoded Clojure value."
+  [{:keys [env trx] :as sophia} db value]
+  (trackit/track-time (str "sophia." db ".deserialization.time")
+    (trackit/track-distribution (str "sophia." db ".deserialization.payload-size")
+      (nippy/thaw value))))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                                                                            ;;
 ;;                  ----==| T R A N S A C T I O N S |==----                   ;;
@@ -199,17 +226,6 @@
 ;;                                                                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn serialize [{:keys [env trx] :as sophia} db value]
-  (trackit/track-time (str "sophia." db ".serialization.time")
-    (trackit/track-distribution (str "sophia." db ".serialization.payload-size")
-      (nippy/freeze value))))
-
-
-(defn deserialize [{:keys [env trx] :as sophia} db value]
-  (trackit/track-time (str "sophia." db ".deserialization.time")
-                      (trackit/track-distribution (str "sophia." db ".deserialization.payload-size")
-                                                  (nippy/thaw value))))
-
 
 (defn set-value!
   "Set the given value to the database. If a transaction is passed as
@@ -242,14 +258,15 @@
   ([{:keys [env trx] :as sophia} db key default-value]
    (or (get-value sophia db key) default-value))
   ([{:keys [env trx] :as sophia} db key]
-   (if-let [db* (dbr* env db)]
-     (let [doc* (n/sp_document db*)
-           _    (n/sp_setstring doc* "key" key)
-           v*   (n/sp_get (if trx (trx* trx) db*) doc*)]
-       (n/with-ref v*
-         (deserialize sophia db (n/sp_getbytes v* "value"))))
-     (throw
-      (db-error sophia db "Database %s not found!" db)))))
+   (trackit/track-time (str "sophia." db ".get-value.time")
+       (if-let [db* (dbr* env db)]
+         (let [doc* (n/sp_document db*)
+               _    (n/sp_setstring doc* "key" key)
+               v*   (n/sp_get (if trx (trx* trx) db*) doc*)]
+           (n/with-ref v*
+             (deserialize sophia db (n/sp_getbytes v* "value"))))
+         (throw
+          (db-error sophia db "Database %s not found!" db))))))
 
 
 
@@ -258,14 +275,14 @@
   passed the change will only be visible when the transaction
   is committed. It returns `nil`."
   [{:keys [env trx] :as sophia} db key]
-  (if-let [db* (dbr* env db)]
-    (let [doc* (n/sp_document db*)
-          _    (n/sp_setstring doc* "key" key)
-          _    (n/op (env* env) (n/sp_delete (if trx (trx* trx) db*) doc*))]
-      nil)
-    (throw
-     (db-error sophia db "Database %s not found!" db))))
-
+  (trackit/track-time (str "sophia." db ".delete-key.time")
+    (if-let [db* (dbr* env db)]
+      (let [doc* (n/sp_document db*)
+            _    (n/sp_setstring doc* "key" key)
+            _    (n/op (env* env) (n/sp_delete (if trx (trx* trx) db*) doc*))]
+        nil)
+      (throw
+       (db-error sophia db "Database %s not found!" db)))))
 
 
 
@@ -312,16 +329,17 @@
 
 (defn- range-query-iterate
   "It returns next item as tuple `[key value]` for the given cursor read."
-  [{:keys [doc cursor]}]
-  (let [cursor* (cursor-ref cursor)
-        _       (when-not cursor* (throw (ex-info "Cursor already closed." {})))
-        doc*    (n/sp_get cursor* doc)]
-    (lazy-seq
-     (when doc*
-       (let [key   (n/sp_getstring doc* "key")
-             value (nippy/thaw (n/sp_getbytes doc* "value"))]
-         (cons [key value]
-               (range-query-iterate {:doc doc* :cursor cursor})))))))
+  [{:keys [db doc cursor]}]
+  (lazy-seq
+   (let [cursor* (cursor-ref cursor)
+         sophia  (sophia-env cursor)]
+     (when-not cursor* (throw (ex-info "Cursor already closed." {})))
+     (trackit/track-time (str "sophia." db ".range-query.scan.time")
+       (when-let [doc* (n/sp_get cursor* doc)]
+         (let [key   (n/sp_getstring doc* "key")
+               value (deserialize sophia db (n/sp_getbytes doc* "value"))]
+           (cons [key value]
+                 (range-query-iterate {:doc doc* :cursor cursor :db db}))))))))
 
 
 
@@ -409,7 +427,8 @@
         key
         (n/sp_setstring doc* "key" key))
 
-      (range-query-iterate {:doc doc* :cursor cursor}))
+      (trackit/track-time (str "sophia." db ".range-query.seek.time")
+        (range-query-iterate {:doc doc* :cursor cursor :db db})))
     (throw
      (db-error sophia db "Database %s not found!" db))))
 

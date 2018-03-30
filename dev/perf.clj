@@ -9,6 +9,8 @@
 
 (comment
 
+  ;; Clojure 1.9.0, Java 1.8.0_45
+
   (def env (sph/sophia {:sophia.path "/tmp/sophia-perf"
                         :dbs ["perf"]}))
 
