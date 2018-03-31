@@ -58,7 +58,7 @@ search, common key-value, etc.
 In order to use the library add the dependency to your `project.clj`
 
 ``` clojure
-[com.brunobonacci/clj-sophia "0.3.0"]
+[com.brunobonacci/clj-sophia "0.4.0"]
 ```
 
 Current version: [![Clojars Project](https://img.shields.io/clojars/v/com.brunobonacci/clj-sophia.svg)](https://clojars.org/com.brunobonacci/clj-sophia)
@@ -367,7 +367,7 @@ all belong to the same sophia environment
 ;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 300.0}
 ```
 
-## Configuraiton
+## Configuration
 
 Here the configuration options for sophia environment:
 
