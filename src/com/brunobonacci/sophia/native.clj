@@ -214,7 +214,7 @@
   [env key ^String value
    & {:keys [encoding]
       :or {encoding (default-encoding)}}]
-  (sp_setbytes env key (.getBytes value encoding)))
+  (sp_setbytes env key (.getBytes value ^String encoding)))
 
 
 

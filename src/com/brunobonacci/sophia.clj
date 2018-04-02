@@ -181,7 +181,7 @@
       (if (and ref* (compare-and-set! trx-refs refs (dissoc refs trx)))
         (commit-result
          trx silent
-         (case (n/op (env* env) (n/sp_commit ref*))
+         (case (long (n/op (env* env) (n/sp_commit ref*)))
            0 :ok
            1 :rollback
            2 :lock))
