@@ -1,4 +1,4 @@
-(defproject com.brunobonacci/clj-sophia "0.4.1"
+(defproject com.brunobonacci/clj-sophia "0.4.2"
 
   :description "a Clojure driver for Sophia DB."
 
@@ -12,7 +12,7 @@
   :dependencies [[net.java.dev.jna/jna "4.5.1"]
                  [com.taoensso/nippy "2.14.0"]
                  [prismatic/schema "1.1.7"]
-                 [samsara/trackit-core "0.7.0"]]
+                 [samsara/trackit-core "0.7.1"]]
 
   :profiles
   {:1.8  {:dependencies [[org.clojure/clojure "1.8.0"]]}
