@@ -14,6 +14,8 @@
                  [prismatic/schema "1.1.7"]
                  [samsara/trackit-core "0.7.1"]]
 
+  :global-vars {*warn-on-reflection* true}
+
   :profiles
   {:1.8  {:dependencies [[org.clojure/clojure "1.8.0"]]}
    :1.9  {:dependencies [[org.clojure/clojure "1.9.0"]]}
