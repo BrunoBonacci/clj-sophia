@@ -4,7 +4,8 @@
             [com.brunobonacci.sophia.stats :as st]
             [taoensso.nippy :as nippy]
             [clojure.string :as str]
-            [samsara.trackit :as trackit]))
+            [samsara.trackit :as trackit])
+  (:import java.io.Closeable))
 
 
 
@@ -315,6 +316,8 @@
   (sophia-env [_] sophia)
   (sophia-ref [_] env-ref)
   (cursor-ref [_] @cursor)
+
+  java.io.Closeable
   (close [_] (when-let [ref* @cursor]
                (when (compare-and-set! cursor ref* nil)
                  (n/sp_destroy ref*)))))

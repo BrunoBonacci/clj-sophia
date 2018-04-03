@@ -97,7 +97,7 @@
 
   ;; seek time
   (bench
-   (with-open [cur (sph/cursor env)]
+   (with-open [^java.io.Closeable cur (sph/cursor env)]
      (first (sph/range-query cur "perf" :key (rand-prefix)))))
 
   ;; Evaluation count : 1240320 in 60 samples of 20672 calls.
@@ -112,7 +112,7 @@
   (println
    "count:"
    (time
-    (with-open [cur (sph/cursor env)]
+    (with-open [^java.io.Closeablecur (sph/cursor env)]
       (count (sph/range-query cur "perf")))))
 
   ;; "Elapsed time: 41259.694217 msecs"
