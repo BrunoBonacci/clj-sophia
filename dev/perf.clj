@@ -9,7 +9,8 @@
 
 (comment
 
-  ;; Clojure 1.9.0, Java 1.8.0_45
+  ;; Clojure 1.9.0, Java 1.8.0_45 on Intel Core i7 2.9 GHz / 16 GB 2133 MHz LPDDR3
+  ;; clj-sophia v0.4.2
 
   (def env (sph/sophia {:sophia.path "/tmp/sophia-perf"
                         :dbs ["perf"]}))
@@ -28,17 +29,16 @@
   (bench
    (sph/set-value!  env "perf" (uuid) (uuid)))
 
-  ;; Evaluation count : 2069280 in 60 samples of 34488 calls.
-  ;; Execution time mean : 29.061050 µs ( - 2x 1.827076 µs) ==> *25.5 µs*
-  ;; Execution time std-deviation : 882.068886 ns
-  ;; Execution time lower quantile : 27.913785 µs ( 2.5%)
-  ;; Execution time upper quantile : 31.006612 µs (97.5%)
-  ;; Overhead used : 2.107959 ns
+  ;; Evaluation count : 1993380 in 60 samples of 33223 calls.
+  ;; Execution time mean : 31.940635 µs (- 2x 1.827076 µs) => *~28.3 µs*
+  ;; Execution time std-deviation : 1.875344 µs
+  ;; Execution time lower quantile : 29.803801 µs ( 2.5%)
+  ;; Execution time upper quantile : 36.487102 µs (97.5%)
+  ;; Overhead used : 2.086444 ns
   ;;
-  ;; Found 2 outliers in 60 samples (3.3333 %)
-  ;; low-severe  1 (1.6667 %)
-  ;; low-mild    1 (1.6667 %)
-  ;; Variance from outliers : 17.3832 % Variance is moderately inflated by outliers
+  ;; Found 3 outliers in 60 samples (5.0000 %)
+  ;; low-severe	 3 (5.0000 %)
+  ;; Variance from outliers : 43.4703 % Variance is moderately inflated by outliers
 
 
 
@@ -68,17 +68,16 @@
    (sph/get-value env "perf" (rand-nth ids)))
 
 
-  ;; Evaluation count : 4162200 in 60 samples of 69370 calls.
-  ;; Execution time mean : 15.012568 µs
-  ;; Execution time std-deviation : 782.143385 ns
-  ;; Execution time lower quantile : 14.410598 µs ( 2.5%)
-  ;; Execution time upper quantile : 15.629390 µs (97.5%)
-  ;; Overhead used : 2.107959 ns
+  ;; Evaluation count : 3508320 in 60 samples of 58472 calls.
+  ;; Execution time mean : 17.593094 µs
+  ;; Execution time std-deviation : 294.678938 ns
+  ;; Execution time lower quantile : 17.190567 µs ( 2.5%)
+  ;; Execution time upper quantile : 18.315122 µs (97.5%)
+  ;; Overhead used : 2.086444 ns
   ;;
-  ;; Found 2 outliers in 60 samples (3.3333 %)
-  ;; low-severe  1 (1.6667 %)
-  ;; low-mild    1 (1.6667 %)
-  ;; Variance from outliers : 38.4649 % Variance is moderately inflated by outliers
+  ;; Found 3 outliers in 60 samples (5.0000 %)
+  ;; low-severe	 3 (5.0000 %)
+  ;; Variance from outliers : 6.2541 % Variance is slightly inflated by outliers
 
 
 
@@ -94,33 +93,31 @@
          (take 8)
          (apply str)))
 
-  (bench (rand-prefix)) ;; 2.680685 µs
+  (bench (rand-prefix)) ;; 3.415691 µs
 
   ;; seek time
   (bench
    (with-open [cur (sph/cursor env)]
      (first (sph/range-query cur "perf" :key (rand-prefix)))))
 
-  ;; Evaluation count : 1282620 in 60 samples of 21377 calls.
-  ;; Execution time mean : 47.575864 µs (- 2.680685 µs) => 45 µs
-  ;; Execution time std-deviation : 816.744321 ns
-  ;; Execution time lower quantile : 46.094277 µs ( 2.5%)
-  ;; Execution time upper quantile : 49.356568 µs (97.5%)
-  ;; Overhead used : 2.107959 ns
-  ;;
-  ;; Found 2 outliers in 60 samples (3.3333 %)
-  ;; low-severe  2 (3.3333 %)
-  ;; Variance from outliers : 6.2739 % Variance is slightly inflated by outliers
+  ;; Evaluation count : 1240320 in 60 samples of 20672 calls.
+  ;; Execution time mean : 51.623567 µs (- 3.415691 µs) => ~*48.2 µs*
+  ;; Execution time std-deviation : 3.866012 µs
+  ;; Execution time lower quantile : 45.745753 µs ( 2.5%)
+  ;; Execution time upper quantile : 57.400526 µs (97.5%)
+  ;; Overhead used : 2.086444 ns
 
 
   ;; scan time
-  (time
-   (with-open [cur (sph/cursor env)]
-     (count (sph/range-query cur "perf"))))
+  (println
+   "count:"
+   (time
+    (with-open [cur (sph/cursor env)]
+      (count (sph/range-query cur "perf")))))
 
-  ;; "Elapsed time: 27785.393502 msecs"
-  ;; count: 2502245
-  ;; (/ (* 1000 27785.393502) 2502245 ) => 11.104185841913962 µs
+  ;; "Elapsed time: 41259.694217 msecs"
+  ;; count: 2413142
+  ;; (/ (* 1000 41259.694217) 2413142 ) => 17.097913930054677 µs
 
 
   )
