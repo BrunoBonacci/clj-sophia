@@ -1,4 +1,4 @@
-(defproject com.brunobonacci/clj-sophia "0.4.2"
+(defproject com.brunobonacci/clj-sophia "0.4.3"
 
   :description "a Clojure driver for Sophia DB."
 
