@@ -305,8 +305,7 @@
 (defprotocol ICursor
   (sophia-env [_] "Sophia db configuration and environment")
   (sophia-ref [_] "Sophia native env ref")
-  (cursor-ref [_] "Internal cursor ref")
-  (close      [_] "to close the cursor when done"))
+  (cursor-ref [_] "Internal cursor ref"))
 
 
 

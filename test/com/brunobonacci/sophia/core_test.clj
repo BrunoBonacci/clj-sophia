@@ -80,7 +80,7 @@
 
 (defmacro test-range-query
   [sophia db & opts]
-  `(with-open [cursor# (db/cursor ~sophia)]
+  `(with-open [^java.io.Closeable cursor# (db/cursor ~sophia)]
      (doall (db/range-query cursor# ~db ~@opts))))
 
 
@@ -160,7 +160,7 @@
              _ (load-seqence-data sophia "test")]
 
          (count
-          (with-open [cursor (db/cursor sophia)]
+          (with-open [^java.io.Closeable cursor (db/cursor sophia)]
             (db/range-query cursor "test"))))
        => (throws #"Cursor already closed.")
        )
