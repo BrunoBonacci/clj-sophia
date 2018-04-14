@@ -1,0 +1,20 @@
+FROM openjdk:10-jdk
+
+ADD ./ /clj-sophia/
+
+ENV TC_NUM_TESTS 500
+
+#
+# Purposely split in multiple RUN statement for ease of debugging
+#
+
+RUN apt-get update \
+    && apt-get install -y wget \
+    && wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -O /bin/lein \
+    && chmod +x /bin/lein
+
+WORKDIR /clj-sophia/
+
+RUN lein -U deps
+
+RUN lein test-all

@@ -65,19 +65,23 @@ Current version: [![Clojars Project](https://img.shields.io/clojars/v/com.brunob
 
 Supported platforms:
 
-| Platform      | Supported       | Note            |
-|---------------|-----------------|-----------------|
-| linux-x86-64  | embedded        | linux 64-bits   |
-| linux-x86     | need to install | linux 32-bits   |
-| darwin-x86-64 | embedded        | Mac OSX 64-bits |
-| win32-x86     | need to install | Windows 32-bits |
-| win32-x86-64  | need to install | Windows 64-bits |
+| Platform      | Supported       | Note                       |
+|---------------|-----------------|----------------------------|
+| linux-x86-64  | embedded        | linux 64-bits (not Alpine) |
+| linux-x86     | need to install | linux 32-bits              |
+| darwin-x86-64 | embedded        | Mac OSX 64-bits            |
+| win32-x86     | need to install | Windows 32-bits            |
+| win32-x86-64  | need to install | Windows 64-bits            |
 
 For the platform you need to install please see [instructions
-here](http://sophia.systems/v2.2/tutorial/build.html). Then ensure
-that the java property `-Djna.library.path=/path/to/sophia/lib` is
-set.
+here](http://sophia.systems/v2.2/tutorial/build.html). Then add the
+following Java property to your command line:
+`-Djna.library.path=/path/to/sophia/lib`
 
+  * Note: If you are running on Alpine linux you might experience
+    crashes. In that case, please build the sophia as described above
+    and add the shared library to your classpath or specify the
+    `jna.library.path` property.
 
 Require the namespace:
 

@@ -1,0 +1,22 @@
+FROM openjdk:8-jdk-alpine
+
+ADD ./ /clj-sophia/
+
+ENV TC_NUM_TESTS 500
+
+#
+# Purposely split in multiple RUN statement for ease of debugging
+#
+
+RUN apk update \
+    && apk add bash git make g++ wget \
+    && wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -O /bin/lein \
+    && chmod +x /bin/lein
+
+WORKDIR /clj-sophia/
+
+RUN lein -U deps
+
+RUN cd lib && ./build.sh
+
+RUN lein update-in :jvm-opts conj '"-Djna.library.path=./lib/sophia"' '"-Djna.debug_load=true"' -- test-all
