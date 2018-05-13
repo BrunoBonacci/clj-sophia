@@ -495,6 +495,8 @@ configuration options:
 
 ## Metrics
 
+The following metrics are tracked via [TrackIt](https://github.com/samsara/trackit)
+
 ```
 sophia.<db-name>.set-value.time
 sophia.<db-name>.get-value.time
@@ -506,6 +508,13 @@ sophia.<db-name>.deserialization.payload-size
 sophia.<db-name>.range-query.seek.time
 sophia.<db-name>.range-query.scan.time
 ```
+
+Additionally all native engine metrics can be inspected and tracked as
+well.  All metrics can be pushed to a number of different systems such
+as: Console, Ganglia, Graphite, Statsd, Infuxdb, Reimann and NewRelic.
+
+To enable reporting of these metrics please see [TrackIt
+documentation](https://github.com/samsara/trackit#start-reporting).
 
 ## How to build.
 
