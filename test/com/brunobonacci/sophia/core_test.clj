@@ -307,3 +307,163 @@
                          :order :desc))
        => (->> sequecen-data (take 10) reverse)
          )
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;                  ----==| T R A N S A C T I O N S |==----                   ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(facts "transactions - write inside a transaction are not visible from outside the tx."
+
+       (with-test-database [sophia (rand-db "test")]
+         (db/set-value! sophia "test" "key1" "value1")
+         (db/with-transaction [tx (db/begin-transaction sophia)]
+           ;; can get pre-existing keys
+           (db/get-value tx "test" "key1") => "value1"
+
+           ;; set a value within the tx
+           (db/set-value! tx "test" "key2" "value2")
+
+           ;; can read it back
+           (db/get-value tx "test" "key2") => "value2"
+
+           ;; but not visible outside tx
+           (db/get-value sophia "test" "key2") => nil
+           )))
+
+
+(facts "transactions - write inside a transaction are not visible from outside the tx.
+           including updates"
+
+       (with-test-database [sophia (rand-db "test")]
+         (db/set-value! sophia "test" "key1" "value1")
+         (db/with-transaction [tx (db/begin-transaction sophia)]
+           ;; can get pre-existing keys
+           (db/get-value tx "test" "key1") => "value1"
+
+           ;; set a value within the tx
+           (db/set-value! tx "test" "key1" "value2")
+
+           ;; can read it back
+           (db/get-value tx "test" "key1") => "value2"
+
+           ;; but not visible outside tx
+           (db/get-value sophia "test" "key1") => "value1"
+           )))
+
+
+
+(facts "transactions - write inside a transaction are not visible from outside the tx.
+           including deletes"
+
+       (with-test-database [sophia (rand-db "test")]
+         (db/set-value! sophia "test" "key1" "value1")
+         (db/with-transaction [tx (db/begin-transaction sophia)]
+           ;; can get pre-existing keys
+           (db/get-value tx "test" "key1") => "value1"
+
+           ;; set a value within the tx
+           (db/delete-key! tx "test" "key1")
+
+           ;; can read it back
+           (db/get-value tx "test" "key1") => nil
+
+           ;; but not visible outside tx
+           (db/get-value sophia "test" "key1") => "value1"
+           )))
+
+
+
+
+(facts "transactions - write outside a transaction are not visible from inside the tx."
+
+       (with-test-database [sophia (rand-db "test")]
+         (db/set-value! sophia "test" "key1" "value1")
+         (db/with-transaction [tx (db/begin-transaction sophia)]
+           ;; can get pre-existing keys
+           (db/get-value tx "test" "key1") => "value1"
+           (db/get-value tx "test" "key2") => nil
+
+           ;; set a value outside the tx
+           (db/set-value! sophia "test" "key2" "value2")
+
+           ;; can read it back
+           (db/get-value sophia "test" "key2") => "value2"
+
+           ;; but not visible outside tx
+           (db/get-value tx "test" "key2") => nil
+           )))
+
+
+(comment
+  ;; Serializable Snapshot Isolation violation
+
+  (facts "transactions - write outside a transaction are not visible from inside the tx.
+           including updates"
+
+         (with-test-database [sophia (rand-db "test")]
+           (db/set-value! sophia "test" "key1" "value1")
+           (db/with-transaction [tx (db/begin-transaction sophia)]
+             ;; can get pre-existing keys
+             (db/get-value tx "test" "key1") => "value1"
+
+             ;; set a value outside the tx
+             (db/set-value! sophia  "test" "key1" "value2")
+
+             ;; can read it back
+             (db/get-value sophia "test" "key1") => "value2"
+
+             ;; but not visible inside tx
+             (db/get-value tx "test" "key1") => "value1"
+             )))
+
+
+
+  (facts "transactions - write outside a transaction are not visible from inside the tx.
+           including deletes"
+
+         (with-test-database [sophia (rand-db "test")]
+           (db/set-value! sophia "test" "key1" "value1")
+           (db/with-transaction [tx (db/begin-transaction sophia)]
+             ;; can get pre-existing keys
+             (db/get-value tx "test" "key1") => "value1"
+
+             ;; set a value outside the tx
+             (db/delete-key! sophia "test" "key1")
+
+             ;; can read it back
+             (db/get-value sophia "test" "key1") => nil
+
+             ;; but not visible inside tx
+             (db/get-value tx "test" "key1") => "value1"
+             )))
+  )
+
+
+
+
+
+(comment
+  ;; Serializable Snapshot Isolation violation
+  ;; example
+  (def sophia (rand-db "test"))
+  (db/set-value! sophia "test" "key1" "value1") ;;=> "value1"
+
+  (def tx (db/begin-transaction sophia))
+
+  ;; can get pre-existing keys
+  (db/get-value tx "test" "key1") ;;=> "value1"
+
+  ;; set a value outside the tx
+  (db/set-value! sophia  "test" "key1" "value2") ;;=> "value2"
+
+  ;; can read it back
+  (db/get-value sophia "test" "key1") ;;=> "value2"
+
+  ;; read inside tx
+  (db/get-value tx "test" "key1") ;;=> "value1"
+  )
