@@ -1,0 +1,26 @@
+FROM openjdk:10-jdk
+
+ADD ./ /clj-sophia/
+
+ENV TC_NUM_TESTS 500
+
+#
+# Purposely split in multiple RUN statement for ease of debugging
+#
+
+RUN apt-get update \
+    && apt-get install -y wget make gcc \
+    && wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -O /bin/lein \
+    && chmod +x /bin/lein
+
+WORKDIR /clj-sophia/
+
+RUN cd lib && \
+    ./build.sh
+
+
+# then run
+# export CONTID=xyz
+# docker cp ${CONTID}:/clj-sophia/lib/sophia/libsophia.so.2.2.0 ./resources/linux-x86-64/libsophia.so
+# docker cp ${CONTID}:/clj-sophia/lib/sophia/libsophia.so.2.2.0 ./resources/linux-x86-64/libsophia.so.2.2
+# docker cp ${CONTID}:/clj-sophia/lib/sophia/libsophia.so.2.2.0 ./resources/linux-x86-64/libsophia.so.2.2.0

@@ -6,8 +6,9 @@ cd $(dirname $0)
 rm -fr ./sophia
 git clone https://github.com/pmwkaa/sophia.git
 cd $(dirname $0)/sophia
-echo "Checking out v2.2"
-git checkout -b remotes/origin/v2.2
+echo "Checking out v2.2 - 669d57b"
+#git checkout -b remotes/origin/v2.2
+git checkout 669d57b
 
 # build
 make

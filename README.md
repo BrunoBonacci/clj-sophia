@@ -58,7 +58,7 @@ search, common key-value, etc.
 In order to use the library add the dependency to your `project.clj`
 
 ``` clojure
-[com.brunobonacci/clj-sophia "0.4.3"]
+[com.brunobonacci/clj-sophia "0.4.4"]
 ```
 
 Current version: [![Clojars Project](https://img.shields.io/clojars/v/com.brunobonacci/clj-sophia.svg)](https://clojars.org/com.brunobonacci/clj-sophia)
@@ -533,6 +533,14 @@ cd ..
 # run the tests:
 lein do clean, midje
 ```
+
+## Version compatibility matrix
+
+| From version | Until version | Sophia version | Note                                                             |
+|:------------:|:-------------:|:--------------:|:-----------------------------------------------------------------|
+| Up to        | 0.4.3         | v2.2 (eca1348) |                                                                  |
+| 0.4.4        |               | v2.2 (669d57b) | [Important SSI fix](https://github.com/pmwkaa/sophia/issues/164) |
+
 
 ## License
 
