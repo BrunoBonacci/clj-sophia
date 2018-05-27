@@ -13,7 +13,7 @@
 
   :dependencies [[net.java.dev.jna/jna "4.5.1"]
                  [com.taoensso/nippy "2.14.0"]
-                 [prismatic/schema "1.1.7"]
+                 [prismatic/schema "1.1.9"]
                  [samsara/trackit-core "0.7.1"]]
 
   :global-vars {*warn-on-reflection* true}
