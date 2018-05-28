@@ -1,8 +1,9 @@
 (defproject com.brunobonacci/clj-sophia "0.4.4"
 
-  :description "A Clojure driver for Sophia DB. Sophia is RAM-Disk hybrid storage
-                designed to provide best possible on-disk performance without
-                degradation in time."
+  :description "An idiomatic Clojure driver for Sophia DB. Sophia is
+                RAM-Disk hybrid storage designed to provide best
+                possible on-disk performance without degradation in
+                time."
 
   :url "https://github.com/BrunoBonacci/clj-sophia"
 
