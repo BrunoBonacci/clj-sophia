@@ -149,8 +149,12 @@ Let's add more data:
 
 ### Range queries
 
-You can run **range queries** and get a `lazy-seq` of ordered items (by key).
-This is very useful when working with timeseries.
+You can run **range queries** and get a `lazy-seq` of ordered items
+(by key).  This is very useful when working with timeseries but also
+with other keys.  The function `range-query` takes a cursor which you
+can create with the `cursor` function and a database name and return a
+ordered lazy-sequence of entries where each entry is a tuple with the
+key and the value, like: `[ key, value ]`.
 
 Let's query the data:
 
