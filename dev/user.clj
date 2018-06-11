@@ -223,9 +223,16 @@
 
 (sph/transact! env
   (fn [tx]
-    (let [u (sph/get-value tx "accounts" "user1")
-          u' (when u (update u :age inc))]
-      (sph/set-value! tx "accounts" "user1" u'))))
+    (let [u (sph/get-value tx "accounts" "user1")]
+      (when u
+        (sph/set-value! tx "accounts" "user1"
+                        (update u :age inc))))))
+
+(comment
+  (sph/update-value! env "accounts" "user1" update :age inc)
+
+  )
+
 
 
 (comment

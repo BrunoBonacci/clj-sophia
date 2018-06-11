@@ -229,7 +229,6 @@
                   "with-transaction only allows Symbols in bindings"))))
 
 
-(require '[clojure.tools.logging :as log])
 (defn transact!
   ""
   {:style/indent 1}
@@ -240,7 +239,7 @@
    :on-error
    :max-retry :forever
    :retry-delay [:random-exp-backoff :base 2 :+/- 0.5]
-   :retryable-error? (fn [ex] (print (prn-str ex)) (-> ex ex-data :result (#{:rollback :lock})) true)
+   :retryable-error? (fn [ex] (-> ex ex-data :result (#{:rollback :lock})))
    :log-level :debug
    :message "Transaction failed because of Concurrent update"
    :track-as "sophia.api.transact"))
@@ -309,6 +308,20 @@
         nil)
       (throw
        (db-error sophia db "Database %s not found!" db)))))
+
+
+
+(defn update-value!
+  ""
+  [{:keys [env trx] :as sophia} db key f & args]
+  (let [updf (fn [tx]
+               (let [v (get-value tx db key)]
+                 (when v
+                   (set-value! tx db key
+                               (apply f v args)))))]
+    (if trx
+      (updf sophia)
+      (transact! sophia updf))))
 
 
 
