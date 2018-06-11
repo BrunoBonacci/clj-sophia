@@ -15,7 +15,8 @@
   :dependencies [[net.java.dev.jna/jna "4.5.1"]
                  [com.taoensso/nippy "2.14.0"]
                  [prismatic/schema "1.1.9"]
-                 [samsara/trackit-core "0.7.1"]]
+                 [samsara/trackit-core "0.7.1"]
+                 [com.brunobonacci/safely "0.5.0-alpha4"]]
 
   :global-vars {*warn-on-reflection* true}
 

@@ -1,13 +1,12 @@
 (ns com.brunobonacci.sophia
-  (:require [com.brunobonacci.sophia.native :as n]
+  (:require [clojure.string :as str]
             [com.brunobonacci.sophia.config :as c]
+            [com.brunobonacci.sophia.native :as n]
             [com.brunobonacci.sophia.stats :as st]
+            [samsara.trackit :as trackit]
             [taoensso.nippy :as nippy]
-            [clojure.string :as str]
-            [samsara.trackit :as trackit])
+            [safely.core :refer [safely]])
   (:import java.io.Closeable))
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                                                                            ;;
@@ -185,7 +184,9 @@
          (case (long (n/op (env* env) (n/sp_commit ref*)))
            0 :ok
            1 :rollback
-           2 :lock))
+           ;; in case of a lock the tx is left in lock state
+           ;; but alive, so we have to put it back.
+           2 (do (swap! trx-refs assoc trx ref*) :lock)))
         (throw (ex-info "Transaction already terminated." transaction)))))
 
 
@@ -222,10 +223,27 @@
                                   ;; return last value
                                   res#)
                                 (catch Throwable x#
-                                  (rollback ~(bindings 0))
+                                  (try (rollback ~(bindings 0)) (catch Throwable z#))
                                   (throw x#))))
     :else (throw (IllegalArgumentException.
                   "with-transaction only allows Symbols in bindings"))))
+
+
+(require '[clojure.tools.logging :as log])
+(defn transact!
+  ""
+  {:style/indent 1}
+  [env f]
+  (safely
+   (with-transaction [tx (begin-transaction env)]
+     (f tx))
+   :on-error
+   :max-retry :forever
+   :retry-delay [:random-exp-backoff :base 2 :+/- 0.5]
+   :retryable-error? (fn [ex] (print (prn-str ex)) (-> ex ex-data :result (#{:rollback :lock})) true)
+   :log-level :debug
+   :message "Transaction failed because of Concurrent update"
+   :track-as "sophia.api.transact"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
