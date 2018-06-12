@@ -230,7 +230,13 @@
 
 
 (defn transact!
-  ""
+  "It takes a `sophia-env` and a function `f` which presumably updates
+  the database and it runs the function `f` with a transaction as
+  parameter. At the end it will attempt to commit the transaction, if
+  the commit fails, the transaction will be rolled back and retried
+  automatically. If the function fails the transaction will be rolled
+  back and the error propagated.  The function returns what `f`
+  returns."
   {:style/indent 1}
   [env f]
   (safely
@@ -312,7 +318,13 @@
 
 
 (defn update-value!
-  ""
+  "Given a key and a function `f` it applies the function `f` to the
+  given key's value and it updates it in a transaction. If concurrent
+  update it happens it will retry with a exponential back off delay.
+  If instead of a environment you provide a transaction it will update
+  the given key within the transaction and leave it to the user to
+  commit/retry the transaction.
+  The semantic is similar to clojure.core/update but over a db value."
   [{:keys [env trx] :as sophia} db key f & args]
   (let [updf (fn [tx]
                (let [v (get-value tx db key)]

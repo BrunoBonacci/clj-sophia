@@ -231,6 +231,10 @@
 (comment
   (sph/update-value! env "accounts" "user1" update :age inc)
 
+  (sph/with-transaction [tx (sph/begin-transaction env)]
+    (sph/update-value! tx "accounts" "user1" update :age inc)
+    (/ 1 0))
+
   )
 
 
