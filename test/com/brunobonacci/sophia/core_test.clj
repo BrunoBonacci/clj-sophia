@@ -6,7 +6,8 @@
             [midje.sweet :refer :all]
             [com.brunobonacci.sophia :as db]
             [clojure.string :as str]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [safely.core :refer [safely]]))
 
 
 
@@ -438,3 +439,117 @@
            ;; but not visible inside tx
            (db/get-value tx "test" "key1") => "value1"
            )))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                            ;;
+;;         ----==| T R A N S A C T !   A N D   F R I E N D S |==----          ;;
+;;                                                                            ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(facts "transact! - executes the function with a transaction and
+        attempts to commit at the end. If it fails because the
+        transaction is aborted for concurrent modification it will
+        retry the transaction after a while."
+
+       (with-test-database [sophia (rand-db "test")]
+
+         (db/set-value! sophia "test" "stats" {:counter 0})
+
+         (db/transact! sophia
+           (fn [tx]
+             (let [u (db/get-value tx "test" "stats")]
+               (when u
+                 (db/set-value! tx "test" "stats"
+                                (update u :counter inc))))))
+         => {:counter 1}
+         ))
+
+
+
+(facts "transact! - concurrent update should be retried"
+
+       (with-test-database [sophia (rand-db "test")]
+
+         (let [abort (atom false)]
+           (db/set-value! sophia "test" "stats" {:counter 0})
+
+           (dotimes [z 3]
+             (future
+               (safely
+                (dotimes [_ 1000]
+                  (db/transact! sophia
+                    (fn [tx]
+                      (when-not @abort
+                            (let [u (db/get-value tx "test" "stats")]
+                              (when u
+                                (db/set-value! tx "test" "stats"
+                                               (update u :counter inc))))))))
+                :on-error
+                :default nil)))
+
+           ;; wait a bit
+           (safely.core/sleep 2000)
+           (reset! abort true)
+
+           ;; all concurrent updates should now be ok
+           (db/get-value sophia "test" "stats") => {:counter 3000}
+
+           )))
+
+
+
+(facts "update-value! executes the function of the
+        result of the of the key and saves the value
+        back wrapped in a transact!.
+        If fails it will retry.
+        "
+
+       (with-test-database [sophia (rand-db "test")]
+
+         (db/set-value! sophia "test" "stats" {:counter 0})
+
+         (db/update-value! sophia "test" "stats"
+                           update :counter inc)
+         => {:counter 1}
+         ))
+
+
+
+(facts "update-value! If the key is not present
+        the function is not executed and nil is returned!
+        "
+
+       (with-test-database [sophia (rand-db "test")]
+
+         (db/update-value! sophia "test" "stats"
+                           assoc :counter 1)
+         => nil))
+
+
+
+(facts "update-value! If the key is not present
+        the function is not executed and nil is returned!
+        "
+
+       (with-test-database [sophia (rand-db "test")]
+
+         (db/upsert-value! sophia "test" "stats"
+                           update :counter (fnil inc 10)))
+       => {:counter 11})
+
+
+(facts "upsert-value! behaves like update if the value
+        already exists.
+        "
+
+       (with-test-database [sophia (rand-db "test")]
+
+         (db/set-value! sophia "test" "stats" {:counter 0})
+
+         (db/upsert-value! sophia "test" "stats"
+                           update :counter inc)
+         => {:counter 1}
+         ))

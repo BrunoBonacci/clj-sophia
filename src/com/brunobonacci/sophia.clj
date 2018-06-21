@@ -324,13 +324,35 @@
   If instead of a environment you provide a transaction it will update
   the given key within the transaction and leave it to the user to
   commit/retry the transaction.
-  The semantic is similar to clojure.core/update but over a db value."
+  The semantic is similar to clojure.core/update but over a db value.
+  If the key doesn't exists then the is not executed and nil is returned"
   [{:keys [env trx] :as sophia} db key f & args]
   (let [updf (fn [tx]
                (let [v (get-value tx db key)]
                  (when v
                    (set-value! tx db key
                                (apply f v args)))))]
+    (if trx
+      (updf sophia)
+      (transact! sophia updf))))
+
+
+(defn upsert-value!
+  "Same as `update-value!` but `f` is applied also when the key doesn't
+  exists.`
+  Given a key and a function `f` it applies the function `f` to the
+  given key's value and it updates it in a transaction. If concurrent
+  update it happens it will retry with a exponential back off delay.
+  If instead of a environment you provide a transaction it will update
+  the given key within the transaction and leave it to the user to
+  commit/retry the transaction.
+  The semantic is similar to clojure.core/update but over a db value.
+  If the key doesn't exists f is applied with `nil`"
+  [{:keys [env trx] :as sophia} db key f & args]
+  (let [updf (fn [tx]
+               (let [v (get-value tx db key)]
+                 (set-value! tx db key
+                             (apply f v args))))]
     (if trx
       (updf sophia)
       (transact! sophia updf))))
