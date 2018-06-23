@@ -491,7 +491,7 @@
                 :default nil)))
 
            ;; wait a bit
-           (safely.core/sleep 2000)
+           (safely.core/sleep 5000)
            (reset! abort true)
 
            ;; all concurrent updates should now be ok
