@@ -479,7 +479,7 @@
            (dotimes [z 3]
              (future
                (safely
-                (dotimes [_ 1000]
+                (dotimes [_ 100]
                   (db/transact! sophia
                     (fn [tx]
                       (when-not @abort
@@ -491,11 +491,11 @@
                 :default nil)))
 
            ;; wait a bit
-           (safely.core/sleep 5000)
+           (safely.core/sleep 3000)
            (reset! abort true)
 
            ;; all concurrent updates should now be ok
-           (db/get-value sophia "test" "stats") => {:counter 3000}
+           (db/get-value sophia "test" "stats") => {:counter 300}
 
            )))
 
