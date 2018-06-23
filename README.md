@@ -375,6 +375,77 @@ all belong to the same sophia environment
 ;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 300.0}
 ```
 
+### `transact!`
+
+Often you might want update one or more values in a transaction.  In a
+highly concurrent system, transaction might fail because of the
+concurrent modification. If you package your changes into a function
+that reads all necessary data within the transaction and updates the
+values still within the transaction boundaries than you can use
+`transact!`. If the transaction fails `transact!` it will retry it
+with a exponential back off.  The transaction will be retried until it
+succeed similar to `clojure.core/swap!`.  I
+
+for example, let assume that users have the ability to vote (or like)
+other users, such function could be very concurrent for popular users.
+Keeping track of the user's votes could be done using `transact!`
+
+``` clojure
+(sph/transact! env
+  (fn [tx]
+    (let [u (sph/get-value tx "accounts" "user1")]
+      (when u
+        (sph/set-value! tx "accounts" "user1"
+                        ;; increment the number of votes
+                        (update u :votes (fnil inc 0)))))))
+
+;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 300.0, :votes 1}
+```
+
+If it fails because of concurrent updates, it will be automatically retried.
+
+### `update-value!`
+
+Since this is a common pattern to update the value of a single key
+there is a simplified version called `update-value!`.
+For example if we have a function that increases the age of a user
+on a birthday:
+
+``` clojure
+(sph/update-value! env "accounts" "user1" (fn [u] (update u :age inc)))
+;;=> {:firstname "John", :lastname "Doe", :age 35, :balance 300.0 :votes 1}
+
+;; or more concisely
+
+(sph/update-value! env "accounts" "user1" update :age inc)
+;;=> {:firstname "John", :lastname "Doe", :age 36, :balance 300.0 :votes 1}
+```
+
+The `update-value!` function will lookup for the given key and apply
+the function `f` if the key has been found. If the key doesn't exist
+the function `f` is not called at all and `nil` is returned.
+
+For example:
+
+``` clojure
+;; user10 doesn't exists.
+(sph/update-value! env "accounts" "user10" update :age inc)
+;;=> nil
+```
+
+### `upsert-value!`
+
+There is a similar function called `upsert-value!` which behaves like
+`update-value!` but the function `f` will be called even if the key
+doesn't exists (with `nil`).
+
+``` clojure
+;; user10 doesn't exists.
+(sph/upsert-value! env "accounts" "user10" update :votes (fnil inc 0))
+;;=> {:votes 1}
+```
+
+
 ## Configuration
 
 Here the configuration options for sophia environment:

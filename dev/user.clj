@@ -220,52 +220,25 @@
 ;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 300.0}
 
 
-
 (sph/transact! env
   (fn [tx]
     (let [u (sph/get-value tx "accounts" "user1")]
       (when u
         (sph/set-value! tx "accounts" "user1"
-                        (update u :age inc))))))
-
-(comment
-  (sph/update-value! env "accounts" "user1" update :age inc)
-
-  (sph/with-transaction [tx (sph/begin-transaction env)]
-    (sph/update-value! tx "accounts" "user1" update :age inc)
-    (/ 1 0))
-
-  )
+                        (update u :votes (fnil inc 0)))))))
+;;=> {:firstname "John", :lastname "Doe", :age 34, :balance 300.0 :votes 1}
 
 
+(sph/update-value! env "accounts" "user1" (fn [u] (update u :age inc)))
+;;=> {:firstname "John", :lastname "Doe", :age 35, :balance 300.0 :votes 1}
 
-(comment
-  (require '[safely.core :refer [safely]])
+(sph/update-value! env "accounts" "user1" update :age inc)
+;;=> {:firstname "John", :lastname "Doe", :age 35, :balance 300.0 :votes 1}
 
-  (def abort (atom false))
+;; user10 doesn't exists.
+(sph/update-value! env "accounts" "user10" update :age inc)
+;;=> nil
 
-  (dotimes [z 3]
-    (future
-      (print (str "Starting:" z \newline))
-      (safely
-       (dotimes [_ 1000]
-         (print (str "Attempting:" _ "/" z \newline))
-         (sph/transact! env
-           (fn [tx]
-             (when-not @abort
-               (let [u (sph/get-value tx "accounts" "user1")
-                     u' (when u (update u :age inc))]
-                 (sph/set-value! tx "accounts" "user1" u'))))))
-       :on-error
-       :default nil)
-      (print (str "completed:" z \newline))))
-
-
-  (sph/get-value env "accounts" "user1")
-
-  (reset! abort true)
-
-  (take 10 (map #(safely.core/random % :+/- 0.5) (#'safely.core/exponential-seq 2)))
-
-
-  )
+;; user10 doesn't exists.
+(sph/upsert-value! env "accounts" "user10" update :votes (fnil inc 0))
+;;=> {:votes 1}
