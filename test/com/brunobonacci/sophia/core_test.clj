@@ -491,7 +491,7 @@
                 :default nil)))
 
            ;; wait a bit
-           (loop [i 10]
+           (loop [i 30]
              (when-not (or (= i 0)
                           (= (:counter (db/get-value sophia "test" "stats")) 300))
                (println "Waiting 1sec...")
