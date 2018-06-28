@@ -483,15 +483,20 @@
                   (db/transact! sophia
                     (fn [tx]
                       (when-not @abort
-                            (let [u (db/get-value tx "test" "stats")]
-                              (when u
-                                (db/set-value! tx "test" "stats"
-                                               (update u :counter inc))))))))
+                        (let [u (db/get-value tx "test" "stats")]
+                          (when u
+                            (db/set-value! tx "test" "stats"
+                                           (update u :counter inc))))))))
                 :on-error
                 :default nil)))
 
            ;; wait a bit
-           (safely.core/sleep 3000)
+           (loop [i 10]
+             (when-not (or (= i 0)
+                          (= (:counter (db/get-value sophia "test" "stats")) 300))
+               (println "Waiting 1sec...")
+               (safely.core/sleep 1000)
+               (recur (dec i))))
            (reset! abort true)
 
            ;; all concurrent updates should now be ok
