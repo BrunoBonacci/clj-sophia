@@ -479,7 +479,7 @@
            (dotimes [z 3]
              (future
                (safely
-                (dotimes [_ 100]
+                (dotimes [_ 1000]
                   (db/transact! sophia
                     (fn [tx]
                       (when-not @abort
@@ -491,17 +491,16 @@
                 :default nil)))
 
            ;; wait a bit
-           (loop [i 30]
-             (when-not (or (= i 0)
-                          (= (:counter (db/get-value sophia "test" "stats")) 300))
-               (println "Waiting 1sec...")
-               (safely.core/sleep 1000)
-               (recur (dec i))))
+           (loop [i 20]
+             (let [cnt (:counter (db/get-value sophia "test" "stats"))]
+               (when-not (or (= i 0) (= cnt 3000))
+                 (println "Waiting 1sec... [" cnt "]")
+                 (safely.core/sleep 1000)
+                 (recur (dec i)))))
            (reset! abort true)
 
            ;; all concurrent updates should now be ok
-           (db/get-value sophia "test" "stats") => {:counter 300}
-
+           (db/get-value sophia "test" "stats") => {:counter 3000}
            )))
 
 

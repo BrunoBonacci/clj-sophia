@@ -31,6 +31,24 @@
 
 
 
+(defn- swap-vals!*
+  "Like `clojure.core/swap-vals!` but backward compatible
+  with clojure 1.8.
+  Atomically swaps the value of atom to be:
+  (apply f current-value-of-atom args). Note that f may be called
+  multiple times, and thus should be free of side effects.
+  Returns [old new], the value of the atom before and after the swap.
+  "
+  [atom f & args]
+  (loop []
+    (let [val1 @atom
+          val2 (apply f val1 args)]
+      (if (compare-and-set! atom val1 val2)
+        [val1 val2]
+        (recur)))))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                                                                            ;;
 ;;                  ---==| S E R I A L I Z A T I O N |==----                  ;;
@@ -77,14 +95,14 @@
                  (ex-info
                   (format
                    (str "The transaction %s has been rolled back"
-                        " because if a concurrent modification.") trxid)
+                        " because of a concurrent modification.") trxid)
                   {:trx trxid :result result}))
       :lock (throw
              (ex-info
               (format
                (str "The transaction %s has been rolled back"
                     " because another transaction is locking "
-                    "the one key.") trxid)
+                    "one key.") trxid)
               {:trx trxid :result result})))
     result))
 
@@ -176,19 +194,26 @@
              transaction. It could be retried in a later time.
     "
     [{:keys [env trx] :as transaction} & {:keys [silent]}]
-    (let [refs @trx-refs
-          ref* (get refs trx)]
-      (if (and ref* (compare-and-set! trx-refs refs (dissoc refs trx)))
+
+    (when-not (get @trx-refs trx)
+      (throw (ex-info "Cannot commit. Transaction already terminated."
+                      transaction)))
+    (let [[ref1 ref2] (swap-vals!* trx-refs dissoc trx)]
+      (cond
+        (not (get ref1 trx))
+        (throw (ex-info "Cannot commit. Transaction already terminated."
+                        transaction))
+
+        (and (get ref1 trx) (not (get ref2 trx)))
         (commit-result
          trx silent
-         (case (long (n/op (env* env) (n/sp_commit ref*)))
-           0 :ok
-           1 :rollback
-           ;; in case of a lock the tx is left in lock state
-           ;; but alive, so we have to put it back.
-           2 (do (swap! trx-refs assoc trx ref*) :lock)))
-        (throw (ex-info "Transaction already terminated." transaction)))))
-
+         (let [ref* (get ref1 trx)]
+           (case (long (n/op (env* env) (n/sp_commit ref*)))
+             0 :ok
+             1 :rollback
+             ;; in case of a lock the tx is left in lock state
+             ;; but alive, so we have to put it back.
+             2 (do (swap! trx-refs assoc trx ref*) :lock)))))))
 
 
   (defn rollback
@@ -196,11 +221,18 @@
      associated with it.
     "
     [{:keys [trx] :as transaction}]
-    (let [refs @trx-refs
-          ref* (get refs trx)]
-      (if (and ref* (compare-and-set! trx-refs refs (dissoc refs trx)))
-        (do (n/sp_destroy ref*) nil)
-        (throw (ex-info "Transaction already terminated." transaction))))))
+    (when-not (get @trx-refs trx)
+      (throw (ex-info "Cannot commit. Transaction already terminated."
+                      transaction)))
+    (let [[ref1 ref2] (swap-vals!* trx-refs dissoc trx)]
+      (cond
+        (not (get ref1 trx))
+        (throw (ex-info "Cannot commit. Transaction already terminated."
+                        transaction))
+
+        (and (get ref1 trx) (not (get ref2 trx)))
+        (let [ref* (get ref1 trx)]
+          (n/sp_destroy ref*) nil)))))
 
 
 
