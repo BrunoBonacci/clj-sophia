@@ -384,9 +384,9 @@ that reads all necessary data within the transaction and updates the
 values still within the transaction boundaries than you can use
 `transact!`. If the transaction fails `transact!` it will retry it
 with a exponential back off.  The transaction will be retried until it
-succeed similar to `clojure.core/swap!`.  I
+succeed similar to `clojure.core/swap!`.
 
-for example, let assume that users have the ability to vote (or like)
+For example, let assume that users have the ability to vote (or like)
 other users, such function could be very concurrent for popular users.
 Keeping track of the user's votes could be done using `transact!`
 
