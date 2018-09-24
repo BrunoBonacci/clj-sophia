@@ -1,5 +1,6 @@
 # clj-sophia
-[![Clojars Project](https://img.shields.io/clojars/v/com.brunobonacci/clj-sophia.svg)](https://clojars.org/com.brunobonacci/clj-sophia) ![CircleCi](https://img.shields.io/circleci/project/BrunoBonacci/clj-sophia.svg) ![last-commit](https://img.shields.io/github/last-commit/BrunoBonacci/clj-sophia.svg) [![Dependencies Status](https://jarkeeper.com/BrunoBonacci/safely/status.svg)](https://jarkeeper.com/BrunoBonacci/clj-sophia)
+[![Clojars Project](https://img.shields.io/clojars/v/com.brunobonacci/clj-sophia.svg)](https://clojars.org/com.brunobonacci/clj-sophia) [![CircleCI (all branches)](https://img.shields.io/circleci/project/github/BrunoBonacci/clj-sophia.svg)](BrunoBonacci)
+ ![last-commit](https://img.shields.io/github/last-commit/BrunoBonacci/clj-sophia.svg) [![Dependencies Status](https://jarkeeper.com/BrunoBonacci/safely/status.svg)](https://jarkeeper.com/BrunoBonacci/clj-sophia)
 
 
 A Clojure driver for [Sophia DB](http://sophia.systems/).
