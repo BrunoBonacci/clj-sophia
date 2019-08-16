@@ -275,7 +275,7 @@
    (with-transaction [tx (begin-transaction env)]
      (f tx))
    :on-error
-   :max-retry :forever
+   :max-retries :forever
    :retry-delay [:random-exp-backoff :base 2 :+/- 0.5]
    :retryable-error? (fn [ex] (-> ex ex-data :result (#{:rollback :lock})))
    :log-level :debug
