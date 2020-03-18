@@ -1,4 +1,4 @@
-(defproject com.brunobonacci/clj-sophia "0.5.3"
+(defproject com.brunobonacci/clj-sophia "0.5.4-SNAPSHOT"
 
   :description "An idiomatic Clojure driver for Sophia DB. Sophia is
                 RAM-Disk hybrid storage designed to provide best
@@ -12,11 +12,11 @@
 
   :scm {:name "git" :url "https://github.com/BrunoBonacci/clj-sophia"}
 
-  :dependencies [[net.java.dev.jna/jna "5.1.0"]
+  :dependencies [[net.java.dev.jna/jna "5.5.0"]
                  [com.taoensso/nippy "2.14.0"]
-                 [prismatic/schema "1.1.9"]
-                 [samsara/trackit-core "0.9.2"]
-                 [com.brunobonacci/safely "0.5.0-alpha7"]]
+                 [prismatic/schema "1.1.12"]
+                 [samsara/trackit-core "0.9.3"]
+                 [com.brunobonacci/safely "0.5.0"]]
 
   :global-vars {*warn-on-reflection* true}
 
@@ -26,10 +26,10 @@
    :1.10 {:dependencies [[org.clojure/clojure "1.10.1"]]}
 
    :dev [:1.9
-         {:dependencies [[midje "1.9.4"]
-                         [org.clojure/test.check "0.9.0"]
-                         [criterium "0.4.4"]]
-          :plugins [[lein-midje "3.2.1"]]}]}
+         {:dependencies [[midje "1.9.9"]
+                         [org.clojure/test.check "1.0.0"]
+                         [criterium "0.4.5"]]
+          :plugins [[lein-midje "3.2.2"]]}]}
 
   :aliases
   {"test-all"   ["do" "clean,"
